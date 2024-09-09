@@ -4,7 +4,6 @@
 
 #include "pixelengine/application/AppDelegate.h"
 // Other files.
-#include <pixelengine/input/Input.h>
 
 // TODO: Move to another place.
 namespace shader_types {
@@ -18,6 +17,9 @@ struct VertexData {
 
 namespace pixelengine::app {
 
+// ===========================================================================================================
+//  GameAppDelegate.
+// ===========================================================================================================
 
 GameAppDelegate::~GameAppDelegate() {
   view_->release();
@@ -28,55 +30,58 @@ GameAppDelegate::~GameAppDelegate() {
 NS::Menu* GameAppDelegate::createMenuBar() {
   using NS::StringEncoding::UTF8StringEncoding;
 
-  NS::Menu* pMainMenu        = NS::Menu::alloc()->init();
-  NS::MenuItem* pAppMenuItem = NS::MenuItem::alloc()->init();
-  NS::Menu* pAppMenu         = NS::Menu::alloc()->init(NS::String::string("Appname", UTF8StringEncoding));
+  NS::Menu* main_menu         = NS::Menu::alloc()->init();
+  NS::MenuItem* app_menu_item = NS::MenuItem::alloc()->init();
+  NS::Menu* app_menu          = NS::Menu::alloc()->init(NS::String::string("Appname", UTF8StringEncoding));
 
-  NS::String* appName = NS::RunningApplication::currentApplication()->localizedName();
-  NS::String* quitItemName =
-      NS::String::string("Quit ", UTF8StringEncoding)->stringByAppendingString(appName);
-  SEL quitCb = NS::MenuItem::registerActionCallback("appQuit", [](void*, SEL, const NS::Object* pSender) {
-    auto pApp = NS::Application::sharedApplication();
-    pApp->terminate(pSender);
-  });
+  NS::String* app_name = NS::RunningApplication::currentApplication()->localizedName();
+  NS::String* quit_item_name =
+      NS::String::string("Quit ", UTF8StringEncoding)->stringByAppendingString(app_name);
 
-  NS::MenuItem* pAppQuitItem =
-      pAppMenu->addItem(quitItemName, quitCb, NS::String::string("q", UTF8StringEncoding));
-  pAppQuitItem->setKeyEquivalentModifierMask(NS::EventModifierFlagCommand);
-  pAppMenuItem->setSubmenu(pAppMenu);
+  SEL quit_callback =
+      NS::MenuItem::registerActionCallback("appQuit", [](void*, SEL, const NS::Object* pSender) {
+        auto pApp = NS::Application::sharedApplication();
+        pApp->terminate(pSender);
+      });
 
-  NS::MenuItem* pWindowMenuItem = NS::MenuItem::alloc()->init();
-  NS::Menu* pWindowMenu         = NS::Menu::alloc()->init(NS::String::string("Window", UTF8StringEncoding));
+  NS::MenuItem* app_quit_item =
+      app_menu->addItem(quit_item_name, quit_callback, NS::String::string("q", UTF8StringEncoding));
+  app_quit_item->setKeyEquivalentModifierMask(NS::EventModifierFlagCommand);
+  app_menu_item->setSubmenu(app_menu);
 
-  SEL closeWindowCb = NS::MenuItem::registerActionCallback("windowClose", [](void*, SEL, const NS::Object*) {
-    auto pApp = NS::Application::sharedApplication();
-    pApp->windows()->object<NS::Window>(0)->close();
-  });
-  NS::MenuItem* pCloseWindowItem =
-      pWindowMenu->addItem(NS::String::string("Close Window", UTF8StringEncoding),
-                           closeWindowCb,
+  NS::MenuItem* window_menu_item = NS::MenuItem::alloc()->init();
+  NS::Menu* window_menu          = NS::Menu::alloc()->init(NS::String::string("Window", UTF8StringEncoding));
+
+  SEL close_window_callback =
+      NS::MenuItem::registerActionCallback("windowClose", [](void*, SEL, const NS::Object*) {
+        auto pApp = NS::Application::sharedApplication();
+        pApp->windows()->object<NS::Window>(0)->close();
+      });
+  NS::MenuItem* close_window_item =
+      window_menu->addItem(NS::String::string("Close Window", UTF8StringEncoding),
+                           close_window_callback,
                            NS::String::string("w", UTF8StringEncoding));
-  pCloseWindowItem->setKeyEquivalentModifierMask(NS::EventModifierFlagCommand);
+  close_window_item->setKeyEquivalentModifierMask(NS::EventModifierFlagCommand);
 
 
-  pWindowMenuItem->setSubmenu(pWindowMenu);
+  window_menu_item->setSubmenu(window_menu);
 
-  pMainMenu->addItem(pAppMenuItem);
-  pMainMenu->addItem(pWindowMenuItem);
+  main_menu->addItem(app_menu_item);
+  main_menu->addItem(window_menu_item);
 
-  pAppMenuItem->release();
-  pWindowMenuItem->release();
-  pAppMenu->release();
-  pWindowMenu->release();
+  app_menu_item->release();
+  window_menu_item->release();
+  app_menu->release();
+  window_menu->release();
 
-  return pMainMenu->autorelease();
+  return main_menu->autorelease();
 }
 
 void GameAppDelegate::applicationWillFinishLaunching(NS::Notification* pNotification) {
-  NS::Menu* pMenu       = createMenuBar();
-  NS::Application* pApp = reinterpret_cast<NS::Application*>(pNotification->object());
-  pApp->setMainMenu(pMenu);
-  pApp->setActivationPolicy(NS::ActivationPolicy::ActivationPolicyRegular);
+  NS::Menu* pMenu = createMenuBar();
+  auto app        = reinterpret_cast<NS::Application*>(pNotification->object());
+  app->setMainMenu(pMenu);
+  app->setActivationPolicy(NS::ActivationPolicy::ActivationPolicyRegular);
 }
 
 void GameAppDelegate::applicationDidFinishLaunching(NS::Notification* pNotification) {
@@ -104,9 +109,10 @@ void GameAppDelegate::applicationDidFinishLaunching(NS::Notification* pNotificat
 
   window_->makeKeyAndOrderFront(nullptr);
 
-  auto pApp = reinterpret_cast<NS::Application*>(pNotification->object());
-  pApp->activateIgnoringOtherApps(true);
+  auto app = reinterpret_cast<NS::Application*>(pNotification->object());
+  app->activateIgnoringOtherApps(true);
 
+  // Run the callback, now that the window is set up.
   if (did_finish_launching_callback_) {
     did_finish_launching_callback_();
   }
@@ -116,10 +122,13 @@ bool GameAppDelegate::applicationShouldTerminateAfterLastWindowClosed(NS::Applic
   return true;
 }
 
+// ===========================================================================================================
+//  GameViewDelegate.
+// ===========================================================================================================
+
 GameViewDelegate::GameViewDelegate(MTL::Device* pDevice)
     : MTK::ViewDelegate()
     , renderer_(std::make_unique<Renderer>(pDevice)) {}
-
 
 void GameViewDelegate::drawInMTKView(MTK::View* pView) {
   std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
@@ -133,18 +142,20 @@ void GameViewDelegate::drawInMTKView(MTK::View* pView) {
 
   if (game_callback_) {
     float delta = elapsed.count();
+    // Ask the game to write to the texture.
     game_callback_(delta);
   }
 
-  renderer_->draw(pView);
+  renderer_->Draw(pView);
 }
 
+// ===========================================================================================================
+//  Renderer.
+// ===========================================================================================================
 
-Renderer::Renderer(MTL::Device* pDevice)
-    : device_(pDevice->retain()){
+Renderer::Renderer(MTL::Device* pDevice) : device_(pDevice->retain()) {
   command_queue_ = device_->newCommandQueue();
   buildShaders();
-  buildDepthStencilStates();
   buildTextures();
   buildBuffers();
 }
@@ -157,6 +168,34 @@ Renderer::~Renderer() {
   pipeline_state_->release();
   command_queue_->release();
   device_->release();
+}
+
+
+void Renderer::Draw(MTK::View* pView) {
+  NS::AutoreleasePool* pPool = NS::AutoreleasePool::alloc()->init();
+
+  MTL::CommandBuffer* cmd_buffer  = command_queue_->commandBuffer();
+  MTL::RenderPassDescriptor* pRpd = pView->currentRenderPassDescriptor();
+  MTL::RenderCommandEncoder* pEnc = cmd_buffer->renderCommandEncoder(pRpd);
+
+  pEnc->setRenderPipelineState(pipeline_state_);
+
+  // Pass in data as 0th arg.
+  pEnc->setVertexBuffer(_pVertexDataBuffer, 0, 0);
+
+  // Update texture.
+  texture_bitmap_.Update();
+  // Use the texture bitmap.
+  pEnc->setFragmentTexture(texture_bitmap_.GetTexture(), /* index */ 0);
+
+  pEnc->drawIndexedPrimitives(
+      MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexTypeUInt16, _pIndexBuffer, 0);
+
+  pEnc->endEncoding();
+  cmd_buffer->presentDrawable(pView->currentDrawable());
+  cmd_buffer->commit();
+
+  pPool->release();
 }
 
 void Renderer::buildShaders() {
@@ -224,16 +263,6 @@ void Renderer::buildShaders() {
   pLibrary->release();
 }
 
-void Renderer::buildDepthStencilStates() {
-  // MTL::DepthStencilDescriptor* pDsDesc = MTL::DepthStencilDescriptor::alloc()->init();
-  // pDsDesc->setDepthCompareFunction(MTL::CompareFunction::CompareFunctionLess);
-  // pDsDesc->setDepthWriteEnabled(true);
-  //
-  // _pDepthStencilState = _pDevice->newDepthStencilState(pDsDesc);
-  //
-  // pDsDesc->release();
-}
-
 void Renderer::buildTextures() {}
 
 void Renderer::buildBuffers() {
@@ -268,40 +297,5 @@ void Renderer::buildBuffers() {
   memcpy(_pIndexBuffer->contents(), indices, indexDataSize * sizeof(uint16_t));
   _pIndexBuffer->didModifyRange(NS::Range::Make(0, _pIndexBuffer->length()));
 }
-
-void Renderer::draw(MTK::View* pView) {
-  using simd::float3;
-  using simd::float4;
-  using simd::float4x4;
-
-  NS::AutoreleasePool* pPool = NS::AutoreleasePool::alloc()->init();
-
-  MTL::CommandBuffer* pCmd        = command_queue_->commandBuffer();
-  MTL::RenderPassDescriptor* pRpd = pView->currentRenderPassDescriptor();
-  MTL::RenderCommandEncoder* pEnc = pCmd->renderCommandEncoder(pRpd);
-
-  pEnc->setRenderPipelineState(pipeline_state_);
-
-  // Pass in data as 0th arg.
-  pEnc->setVertexBuffer(_pVertexDataBuffer, 0, 0);
-
-  // Update texture.
-  texture_bitmap_.Update();
-  // Use the texture bitmap.
-  pEnc->setFragmentTexture(texture_bitmap_.GetTexture(), /* index */ 0);
-
-  pEnc->drawIndexedPrimitives(
-      MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexTypeUInt16, _pIndexBuffer, 0);
-
-  pEnc->endEncoding();
-  pCmd->presentDrawable(pView->currentDrawable());
-  pCmd->commit();
-
-  pPool->release();
-
-  // Input checkpoint.
-  input::Input::Checkpoint();
-}
-
 
 }  // namespace pixelengine::app

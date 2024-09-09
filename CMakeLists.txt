@@ -44,6 +44,7 @@ add_library(
 		src/pixelengine/application/Game.cpp
 		src/pixelengine/application/AppDelegate.cpp
 		src/pixelengine/input/Input.cpp
+		src/pixelengine/world/World.cpp
 )
 
 add_library(PixelEngine::PixelEngine ALIAS PixelEngine_PixelEngine)

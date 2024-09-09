@@ -5,11 +5,11 @@
 #pragma once
 
 #include <thread>
+#include <mutex>
 #include "pixelengine/application/AppDelegate.h"
 #include "pixelengine/world/World.h"
 
 namespace pixelengine::app {
-
 
 //! \brief Class for the game engine.
 class Game {
@@ -37,9 +37,6 @@ public:
   //! \brief Update step.
   void Update(float delta);
 
-  //! \brief Draw the visible world to a texture.
-  void Draw(TextureBitmap& texture_bitmap);
-
   //! \brief Set up the texture.
   void InitializeTexture(TextureBitmap& texture_bitmap, MTL::Device* device) const;
 
@@ -51,10 +48,17 @@ private:
 
   void setDelegates();
 
+  //! \brief Draw the visible world to a texture.
+  void draw(TextureBitmap& texture_bitmap) const;
+
+  void drawTexture() const;
+
   static void simulation(Game* game);
 
   const uint32_t texture_width_;
   const uint32_t texture_height_;
+
+  std::mutex world_mutex_{};
 
   //! \brief Pointer to the world.
   std::unique_ptr<world::World> world_{};
@@ -65,6 +69,7 @@ private:
 
   std::thread simulation_thread_;
 
+  volatile bool is_initialized_ = false;
   bool is_running_ = false;
 };
 

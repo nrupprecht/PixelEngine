@@ -24,27 +24,27 @@ class Renderer {
 public:
   explicit Renderer(MTL::Device* pDevice);
   ~Renderer();
-  void buildShaders();
-  void buildDepthStencilStates();
-  void buildTextures();
-  void buildBuffers();
-  void draw(MTK::View* pView);
+
+  void Draw(MTK::View* pView);
 
   [[nodiscard]] TextureBitmap& GetTexture() { return texture_bitmap_; }
 
 private:
+  void buildShaders();
+  void buildTextures();
+  void buildBuffers();
 
   //! \brief The texture bitmap that is rendered to the screen.
   TextureBitmap texture_bitmap_;
 
-  MTL::Device* device_;
-  MTL::CommandQueue* command_queue_;
-  MTL::Library* shader_library_;
-  MTL::RenderPipelineState* pipeline_state_;
-  MTL::DepthStencilState* depth_stencil_state_;
+  MTL::Device* device_{};
+  MTL::CommandQueue* command_queue_{};
+  MTL::Library* shader_library_{};
+  MTL::RenderPipelineState* pipeline_state_{};
+  MTL::DepthStencilState* depth_stencil_state_{};
 
-  MTL::Buffer* _pVertexDataBuffer;
-  MTL::Buffer* _pIndexBuffer;
+  MTL::Buffer* _pVertexDataBuffer{};
+  MTL::Buffer* _pIndexBuffer{};
 };
 
 class GameViewDelegate : public MTK::ViewDelegate {
