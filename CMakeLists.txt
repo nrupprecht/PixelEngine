@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(
-		metal_cpp_try
+		PixelEngine
 		VERSION 0.1.0
 		DESCRIPTION "A pixel game engine."
 		HOMEPAGE_URL "yada yada.com"
@@ -41,7 +41,9 @@ add_library(
 		src/pixelengine/TextureBitmap.cpp
 		src/pixelengine/MetalImpl.cpp
 		src/pixelengine/Utility.cpp
+		src/pixelengine/application/Game.cpp
 		src/pixelengine/application/AppDelegate.cpp
+		src/pixelengine/input/Input.cpp
 )
 
 add_library(PixelEngine::PixelEngine ALIAS PixelEngine_PixelEngine)

@@ -4,21 +4,25 @@
 
 #pragma once
 
+#include <utility>
+
 #include <AppKit/AppKit.hpp>
 #include <Metal/Metal.hpp>
 #include <MetalKit/MetalKit.hpp>
 
 #include "pixelengine/TextureBitmap.h"
-#include "pixelengine/world/World.h"
 
 namespace pixelengine::app {
 
+struct IndexedPrimitive {
+  MTL::Buffer* vertex_data;
+  MTL::Buffer* index_data;
+};
 
-static constexpr size_t kMaxFramesInFlight = 3;
-
+//! \brief Object that encapsulates the rendering of the game.
 class Renderer {
 public:
-  Renderer(MTL::Device* pDevice, world::World* world);
+  explicit Renderer(MTL::Device* pDevice);
   ~Renderer();
   void buildShaders();
   void buildDepthStencilStates();
@@ -29,50 +33,52 @@ public:
   [[nodiscard]] TextureBitmap& GetTexture() { return texture_bitmap_; }
 
 private:
+
   //! \brief The texture bitmap that is rendered to the screen.
   TextureBitmap texture_bitmap_;
 
-  MTL::Device* _pDevice;
-  MTL::CommandQueue* _pCommandQueue;
-  MTL::Library* _pShaderLibrary;
-  MTL::RenderPipelineState* _pPSO;
-  MTL::DepthStencilState* _pDepthStencilState;
+  MTL::Device* device_;
+  MTL::CommandQueue* command_queue_;
+  MTL::Library* shader_library_;
+  MTL::RenderPipelineState* pipeline_state_;
+  MTL::DepthStencilState* depth_stencil_state_;
 
   MTL::Buffer* _pVertexDataBuffer;
-  MTL::Buffer* _pInstanceDataBuffer[kMaxFramesInFlight];
-  MTL::Buffer* _pCameraDataBuffer[kMaxFramesInFlight];
   MTL::Buffer* _pIndexBuffer;
+};
 
-  // TODO: Presumably, this is not really where this belongs, but I am putting it here for now.
-  world::World* world_{};
+class GameViewDelegate : public MTK::ViewDelegate {
+public:
+  explicit GameViewDelegate(MTL::Device* pDevice);
 
-  float _angle;
-  int _frame;
-  dispatch_semaphore_t _semaphore;
-  static const int kMaxFramesInFlight;
+  //! \brief Virtual function to draw the view for each frame.
+  void drawInMTKView(MTK::View* pView) override;
 
+  void SetGameCallback(std::function<void(float)> callback) {
+    game_callback_ = std::move(callback);
+  }
+
+  Renderer& GetRenderer() {
+    return *renderer_;
+  }
+
+private:
+  //! \brief Pointer to the rendering logic.
+  std::unique_ptr<Renderer> renderer_;
+
+  //! \brief Callback to hook the game into the rendering loop.
+  std::function<void(float)> game_callback_;
+
+  //! \brief Timing information.
   std::chrono::high_resolution_clock::time_point last_render_time_ {};
   double last_frame_time_us_ {};
   std::size_t num_frames_ {};
 };
 
-class MyMTKViewDelegate : public MTK::ViewDelegate {
+class GameAppDelegate : public NS::ApplicationDelegate {
 public:
-  MyMTKViewDelegate(MTL::Device* pDevice, world::World* world);
-  virtual ~MyMTKViewDelegate() override;
-  virtual void drawInMTKView(MTK::View* pView) override;
-
-private:
-  Renderer* _pRenderer;
-
-  //! \brief Pointer to the world.
-  world::World* world_;
-};
-
-class MyAppDelegate : public NS::ApplicationDelegate {
-public:
-  MyAppDelegate(std::size_t width, std::size_t height) : world_(width, height) {}
-  ~MyAppDelegate();
+  GameAppDelegate() = default;
+  ~GameAppDelegate();
 
   NS::Menu* createMenuBar();
 
@@ -80,18 +86,31 @@ public:
   void applicationDidFinishLaunching(NS::Notification* pNotification) override;
   bool applicationShouldTerminateAfterLastWindowClosed(NS::Application* pSender) override;
 
-  world::World& GetWorld() { return world_; }
+  CGRect GetFrame() {
+    return window_->frame();
+  }
+
+  GameViewDelegate& GetViewDelegate() {
+    return *view_delegate_;
+  }
+
+  MTL::Device* GetDevice() {
+    return device_;
+  }
+
+  void SetDidFinishLaunchingCallback(std::function<void()> callback) {
+    did_finish_launching_callback_ = std::move(callback);
+  }
 
 private:
-  NS::Window* _pWindow;
-  MTK::View* _pMtkView;
-  MTL::Device* _pDevice;
-  std::unique_ptr<MyMTKViewDelegate> _pViewDelegate;
+  NS::Window* window_;
+  MTK::View* view_;
+  MTL::Device* device_;
+  std::unique_ptr<GameViewDelegate> view_delegate_;
+
+  std::function<void()> did_finish_launching_callback_;
 
   std::string window_title_ = "Cool game";
-
-  //! \brief The game world.
-  world::World world_;
 };
 
 }  // namespace pixelengine::app

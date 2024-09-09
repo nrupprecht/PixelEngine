@@ -96,6 +96,10 @@ _APPKIT_PRIVATE_DEF_SEL( applicationWillFinishLaunching_,
 _APPKIT_PRIVATE_DEF_SEL( close,
 						"close" );
 
+// Note: Added by NCR on 9/8/24.
+_APPKIT_PRIVATE_DEF_SEL( frame,
+	                    "frame" );
+
 _APPKIT_PRIVATE_DEF_SEL( currentApplication,
 						"currentApplication" );
 

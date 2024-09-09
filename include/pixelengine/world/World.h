@@ -66,7 +66,6 @@ public:
   float temperature = 300.f;
 
 
-
   void UpdateKinematics(float dt, float gravity) {
     velocity_y += dt * gravity;
     velocity_y = std::max(-material->max_speed, std::min(material->max_speed, velocity_y));
@@ -131,7 +130,7 @@ private:
 
 class Physics : public SquareBehavior {
 public:
-  Physics(bool allow_sideways) : allow_sideways_(allow_sideways) {}
+  explicit Physics(bool allow_sideways) : allow_sideways_(allow_sideways) {}
 
   void Update(float dt, std::size_t x, std::size_t y, World& world) const override {
     auto& square = world.GetSquare(x, y);

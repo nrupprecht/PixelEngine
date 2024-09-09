@@ -45,6 +45,7 @@ namespace NS
 			void				setTitle( const String* pTitle );
 
 			void				close();
+		CGRect frame();
 	};
 
 }
@@ -78,4 +79,9 @@ _NS_INLINE void NS::Window::setTitle( const String* pTitle )
 _NS_INLINE void NS::Window::close()
 {
 	Object::sendMessage< void >( this, _APPKIT_PRIVATE_SEL( close ) );
+}
+
+_NS_INLINE CGRect NS::Window::frame()
+{
+	return Object::sendMessage< CGRect >( this, _APPKIT_PRIVATE_SEL( frame ) );
 }
