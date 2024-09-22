@@ -4,14 +4,27 @@
 
 #pragma once
 
+#include <Lightning/Lightning.h>
 #include <cstdlib>  // For rand(), RAND_MAX
 #include <simd/simd.h>
 
 namespace pixelengine {
 
+struct Dimensions {
+  std::size_t width, height;
+
+  std::size_t Area() const { return width * height; }
+};
+
 inline float randf() {
   return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 }
+
+inline int randi(int min, int max) {
+  return min + rand() % (max - min);
+}
+
+Dimensions GetScreenResolution();
 
 namespace math {
 

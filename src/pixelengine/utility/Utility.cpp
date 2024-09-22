@@ -2,11 +2,18 @@
 // Created by Nathaniel Rupprecht on 9/7/24.
 //
 
-#include "pixelengine/Utility.h"
+#include "pixelengine/utility/Utility.h"
 // Other files.
+#include <CoreGraphics/CGDisplayConfiguration.h>
 
 namespace pixelengine {
 
+Dimensions GetScreenResolution() {
+  auto main_display_id = CGMainDisplayID();
+  std::size_t width = CGDisplayPixelsWide(main_display_id);
+  std::size_t height = CGDisplayPixelsHigh(main_display_id);
+  return {width, height};
+}
 
 namespace math {
 

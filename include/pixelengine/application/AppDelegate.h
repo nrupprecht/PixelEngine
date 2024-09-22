@@ -4,20 +4,12 @@
 
 #pragma once
 
-#include <utility>
+#include "pixelengine/graphics/Drawable.h"
+#include "pixelengine/utility/FrameTimer.h"
 
-#include <AppKit/AppKit.hpp>
-#include <Metal/Metal.hpp>
-#include <MetalKit/MetalKit.hpp>
-
-#include "pixelengine/TextureBitmap.h"
 
 namespace pixelengine::app {
 
-struct IndexedPrimitive {
-  MTL::Buffer* vertex_data;
-  MTL::Buffer* index_data;
-};
 
 //! \brief Object that encapsulates the rendering of the game.
 class Renderer {
@@ -27,38 +19,29 @@ public:
 
   void Draw(MTK::View* pView);
 
-  [[nodiscard]] TextureBitmap& GetTexture() { return texture_bitmap_; }
+  void AddDrawable(std::shared_ptr<graphics::Drawable> drawable) {
+    drawables_.push_back(std::move(drawable));
+  }
 
 private:
-  void buildShaders();
-  void buildTextures();
-  void buildBuffers();
-
-  //! \brief The texture bitmap that is rendered to the screen.
-  TextureBitmap texture_bitmap_;
-
   MTL::Device* device_{};
   MTL::CommandQueue* command_queue_{};
-  MTL::Library* shader_library_{};
-  MTL::RenderPipelineState* pipeline_state_{};
-  MTL::DepthStencilState* depth_stencil_state_{};
 
-  MTL::Buffer* _pVertexDataBuffer{};
-  MTL::Buffer* _pIndexBuffer{};
+  std::vector<std::shared_ptr<graphics::Drawable>> drawables_;
 };
 
 class GameViewDelegate : public MTK::ViewDelegate {
 public:
-  explicit GameViewDelegate(MTL::Device* pDevice);
+  explicit GameViewDelegate(MTL::Device* device);
 
   //! \brief Virtual function to draw the view for each frame.
   void drawInMTKView(MTK::View* pView) override;
 
-  void SetGameCallback(std::function<void(float)> callback) {
-    game_callback_ = std::move(callback);
+  void SetDrawViewCallback(std::function<void(float)> callback) {
+    draw_view_callback_ = std::move(callback);
   }
 
-  Renderer& GetRenderer() {
+  [[nodiscard]] Renderer& GetRenderer() const {
     return *renderer_;
   }
 
@@ -67,18 +50,22 @@ private:
   std::unique_ptr<Renderer> renderer_;
 
   //! \brief Callback to hook the game into the rendering loop.
-  std::function<void(float)> game_callback_;
+  std::function<void(float)> draw_view_callback_;
 
   //! \brief Timing information.
-  std::chrono::high_resolution_clock::time_point last_render_time_ {};
-  double last_frame_time_us_ {};
-  std::size_t num_frames_ {};
+  utility::FrameTimer frame_timer_;
 };
 
+//! \brief The main delegate that the game runs to manage rendering and GPU resources.
 class GameAppDelegate : public NS::ApplicationDelegate {
 public:
-  GameAppDelegate() = default;
-  ~GameAppDelegate();
+  explicit GameAppDelegate(Dimensions window_dimensions)
+    : window_dimensions_(window_dimensions) {}
+
+  GameAppDelegate(std::size_t window_width, std::size_t window_height)
+    : window_dimensions_({window_width, window_height}) {}
+
+  ~GameAppDelegate() override;
 
   NS::Menu* createMenuBar();
 
@@ -88,6 +75,10 @@ public:
 
   CGRect GetFrame() {
     return window_->frame();
+  }
+
+  NS::Window* GetWindow() {
+    return window_;
   }
 
   GameViewDelegate& GetViewDelegate() {
@@ -103,12 +94,16 @@ public:
   }
 
 private:
-  NS::Window* window_;
-  MTK::View* view_;
-  MTL::Device* device_;
-  std::unique_ptr<GameViewDelegate> view_delegate_;
+  Dimensions window_dimensions_;
 
-  std::function<void()> did_finish_launching_callback_;
+  NS::Window* window_{};
+  MTK::View* view_{};
+  MTL::Device* device_{};
+
+  //! \brief The view delegate.
+  std::unique_ptr<GameViewDelegate> view_delegate_{};
+
+  std::function<void()> did_finish_launching_callback_{};
 
   std::string window_title_ = "Cool game";
 };

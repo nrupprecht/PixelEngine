@@ -18,7 +18,7 @@ struct MouseStates {
   bool left_mouse_down_last_checkpoint  = false;
   bool right_mouse_down_last_checkpoint = false;
 
-  CGPoint cursor_position{};
+  CGPoint cursor_position {};
 
   void Update() {
     CGEventRef event = CGEventCreate(nullptr);
@@ -40,8 +40,12 @@ struct MouseStates {
 //! \brief Structure for keeping track of keyboard states.
 struct KeyStates {
   struct State {
-    bool is_pressed                  = false;
-    bool is_just_pressed             = false;
+    bool is_pressed      = false;
+    bool is_just_pressed = false;
+
+    //! \brief Whether the key has been released since the last check point
+    bool un_press_queued = false;
+
     bool was_pressed_last_checkpoint = false;
     bool was_shift_on                = false;
     bool was_caps_on                 = false;
@@ -57,10 +61,9 @@ struct KeyStates {
     for (auto& state : states) {
       state.was_pressed_last_checkpoint = state.is_pressed;
       state.is_just_pressed             = false;
+      state.is_pressed = state.is_pressed && !state.un_press_queued;
 
-      state.is_pressed = false;
-
-      // What else?
+      // TODO: Handle shift, caps.
     }
   }
 };
@@ -334,7 +337,7 @@ CGEventRef keyCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event
   // Good reference: https://github.com/caseyscarborough/keylogger
 
   // Filter out to only include key down events.
-  if (type != kCGEventKeyDown && type != kCGEventFlagsChanged) {
+  if (type != kCGEventKeyDown && type != kCGEventFlagsChanged && type != kCGEventKeyUp) {
     return event;
   }
 
@@ -344,9 +347,13 @@ CGEventRef keyCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event
   auto key_code = static_cast<CGKeyCode>(CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode));
 
   // Calculate key up/down.
+  bool up         = false;
   bool down       = false;
   auto last_flags = _key_states.last_flags;
-  if (type == kCGEventFlagsChanged) {
+  if (type == kCGEventKeyUp) {
+    up = true;
+  }
+  else if (type == kCGEventFlagsChanged) {
     switch (key_code) {
       case 54:  // [right-cmd]
       case 55:  // [left-cmd]
@@ -376,7 +383,7 @@ CGEventRef keyCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event
   }
 
   // Only log key down events.
-  if (!down) {
+  if (!down && !up) {
     return event;
   }
 
@@ -386,6 +393,8 @@ CGEventRef keyCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event
   auto& state           = _key_states.states[key_code];
   state.is_just_pressed = !state.was_pressed_last_checkpoint;
   state.is_pressed      = true;
+  // If the key is released, queue a release.
+  state.un_press_queued = up;
 
   // Update flags.
   _key_states.last_flags = flags;
@@ -418,7 +427,8 @@ void setMouseEvents() {
 
 void setKeyEvents() {
   // Create an event tap to retrieve keypresses.
-  auto key_event_mask     = CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventFlagsChanged);
+  auto key_event_mask =
+      CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventKeyUp) | CGEventMaskBit(kCGEventFlagsChanged);
   CFMachPortRef key_event = CGEventTapCreate(kCGSessionEventTap,
                                              kCGHeadInsertEventTap,
                                              kCGEventTapOptionListenOnly,  // kCGEventTapOptionDefault,

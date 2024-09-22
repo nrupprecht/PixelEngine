@@ -5,20 +5,20 @@
 #pragma once
 
 #include <thread>
-#include <mutex>
 #include "pixelengine/application/AppDelegate.h"
 #include "pixelengine/world/World.h"
+#include "pixelengine/graphics/RectangularDrawable.h"
 
 namespace pixelengine::app {
 
 //! \brief Class for the game engine.
 class Game {
 public:
-  Game(uint32_t texture_width, uint32_t texture_height, std::size_t width, std::size_t height)
+  Game(uint32_t texture_width, uint32_t texture_height, std::size_t width, std::size_t height, Dimensions window_dimensions)
     : texture_width_(texture_width)
     , texture_height_(texture_height)
     , world_(std::make_unique<world::World>(width, height))
-  , application_(std::make_unique<GameAppDelegate>()) {}
+    , window_dimensions_(window_dimensions) {}
 
   ~Game() = default;
 
@@ -38,10 +38,10 @@ public:
   void Update(float delta);
 
   //! \brief Set up the texture.
-  void InitializeTexture(TextureBitmap& texture_bitmap, MTL::Device* device) const;
+  // void InitializeTexture(TextureBitmap& texture_bitmap, MTL::Device* device) const;
 
   //! \brief Get the world that the game manages.
-  [[nodiscard]] world::World& GetWorld() { return *world_; }
+  [[nodiscard]] world::World& GetWorld() const { return *world_; }
 
 private:
   void setup();
@@ -58,6 +58,10 @@ private:
   const uint32_t texture_width_;
   const uint32_t texture_height_;
 
+  bool run_simulation_independently_ = false;
+
+  Dimensions window_dimensions_;
+
   std::mutex world_mutex_{};
 
   //! \brief Pointer to the world.
@@ -66,6 +70,9 @@ private:
   CGRect window_frame_{};
 
   std::unique_ptr<GameAppDelegate> application_{};
+
+  std::deque<std::unique_ptr<graphics::ShaderProgram>> shader_programs_;
+  std::shared_ptr<graphics::RectangularDrawable> main_drawable_;
 
   std::thread simulation_thread_;
 

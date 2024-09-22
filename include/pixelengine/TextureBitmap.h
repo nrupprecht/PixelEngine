@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "Color.h"
-
 #include <iostream>
 
 #include <AppKit/AppKit.hpp>
@@ -13,7 +11,10 @@
 #include <MetalKit/MetalKit.hpp>
 #include <simd/simd.h>
 
+#include "Color.h"
+
 namespace pixelengine {
+
 //! \brief A texture that can be set like a bitmap.
 class TextureBitmap {
 public:
@@ -21,9 +22,9 @@ public:
 
   TextureBitmap(size_t width, size_t height, MTL::Device* device);
 
-  TextureBitmap& operator=(TextureBitmap&& other) noexcept;
-
   ~TextureBitmap() { texture_->release(); }
+
+  TextureBitmap& operator=(TextureBitmap&& other) noexcept;
 
   void Initialize(std::size_t width, std::size_t height, MTL::Device* device);
 

@@ -40,10 +40,14 @@ add_library(
 		# Source files.
 		src/pixelengine/TextureBitmap.cpp
 		src/pixelengine/MetalImpl.cpp
-		src/pixelengine/Utility.cpp
 		src/pixelengine/application/Game.cpp
 		src/pixelengine/application/AppDelegate.cpp
+		src/pixelengine/graphics/PipelineState.cpp
+		src/pixelengine/graphics/Drawable.cpp
+		src/pixelengine/graphics/RectangularDrawable.cpp
 		src/pixelengine/input/Input.cpp
+		src/pixelengine/utility/Utility.cpp
+		src/pixelengine/utility/AutoBuffer.cpp
 		src/pixelengine/world/World.cpp
 )
 
