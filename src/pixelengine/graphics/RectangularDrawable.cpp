@@ -6,11 +6,11 @@
 
 namespace pixelengine::graphics {
 
-RectangularDrawable::RectangularDrawable(std::unique_ptr<PipelineState> pipeline_state,
+RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
                                          std::size_t texture_width,
                                          std::size_t texture_height,
                                          MTL::Device* device)
-    : Drawable(std::move(pipeline_state)) {
+    : Drawable(shader_program) {
   float end = 1.0;
 
   verts_[0] = {.position = simd::float3 {-end, +end, 0.0f}, .texcoord = {0.f, 0.f}};

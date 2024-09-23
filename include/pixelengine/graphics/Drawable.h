@@ -4,43 +4,18 @@
 #include <Metal/Metal.hpp>
 #include <MetalKit/MetalKit.hpp>
 
-#include "pixelengine/TextureBitmap.h"
-#include "pixelengine/graphics/PipelineState.h"
+#include "TextureBitmap.h"
+#include "pixelengine/graphics/ShaderProgram.h"
 #include "pixelengine/utility/AutoBuffer.h"
 #include "pixelengine/utility/Utility.h"
 
 namespace pixelengine::graphics {
 
-class TextureBox {
-public:
-  virtual ~TextureBox() = default;
-  virtual void Update() {}
-  [[nodiscard]] virtual const MTL::Texture* GetTexture() const = 0;
-};
-
-class RawTextureBox : public TextureBox {
-public:
-  explicit RawTextureBox(MTL::Texture* texture) : texture_(texture) {}
-  [[nodiscard]] const MTL::Texture* GetTexture() const override { return texture_; }
-private:
-  MTL::Texture* texture_;
-};
-
-class TextureBitmapBox : public TextureBox {
-public:
-  explicit TextureBitmapBox(std::unique_ptr<TextureBitmap> texture_bitmap)
-      : texture_bitmap_(std::move(texture_bitmap)) {}
-  void Update() override { texture_bitmap_->Update(); }
-  [[nodiscard]] const MTL::Texture* GetTexture() const override { return texture_bitmap_->GetTexture(); }
-private:
-  std::unique_ptr<TextureBitmap> texture_bitmap_;
-};
-
 
 //! \brief Represents a drawable object.
 class Drawable {
 public:
-  explicit Drawable(std::unique_ptr<PipelineState> pipeline_state);
+  explicit Drawable(ShaderProgram* shader_program);
 
   virtual ~Drawable() = default;
 
@@ -62,7 +37,7 @@ protected:
 
   std::vector<std::unique_ptr<TextureBitmap>> textures_;
 
-  std::unique_ptr<PipelineState> pipeline_state_ {};
+  ShaderProgram* shader_program_ {};
 };
 
 }  // namespace pixelengine::graphics

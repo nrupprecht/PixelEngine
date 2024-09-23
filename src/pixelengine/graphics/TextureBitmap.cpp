@@ -2,7 +2,7 @@
 // Created by Nathaniel Rupprecht on 9/7/24.
 //
 
-#include "pixelengine/TextureBitmap.h"
+#include "../../../include/pixelengine/graphics/TextureBitmap.h"
 // Other files.
 
 namespace pixelengine {

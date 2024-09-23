@@ -11,7 +11,7 @@
 #include <MetalKit/MetalKit.hpp>
 #include <simd/simd.h>
 
-#include "Color.h"
+#include "pixelengine/Color.h"
 
 namespace pixelengine {
 
@@ -29,6 +29,7 @@ public:
   void Initialize(std::size_t width, std::size_t height, MTL::Device* device);
 
   [[nodiscard]] const MTL::Texture* GetTexture() const { return texture_; }
+  [[nodiscard]] MTL::Texture* GetTexture() { return texture_; }
 
   void SetPixel(std::size_t x, std::size_t y, const Color& color);
 

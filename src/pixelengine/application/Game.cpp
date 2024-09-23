@@ -4,6 +4,8 @@
 
 #include "pixelengine/application/Game.h"
 // Other files.
+#include <pixelengine/graphics/ShaderProgram.h>
+
 #include "pixelengine/input/Input.h"
 
 namespace pixelengine::app {
@@ -200,11 +202,11 @@ void Game::setDelegates() {
   )";
 
   auto device  = application_->GetDevice();
-  auto program = std::make_unique<graphics::ShaderProgram>(shader, "vertexMain", "fragmentMain");
+  auto program = std::make_unique<graphics::ShaderProgram>(device, shader, "vertexMain", "fragmentMain");
   shader_programs_.push_back(std::move(program));
-  auto pipeline_state = std::make_unique<graphics::PipelineState>(device, *shader_programs_.back());
-  main_drawable_ =
-      std::make_shared<graphics::RectangularDrawable>(std::move(pipeline_state), texture_width_, texture_height_, device);
+  main_drawable_ = std::make_shared<graphics::RectangularDrawable>(
+      shader_programs_.back().get(), texture_width_, texture_height_, device);
+
 
   // Add the main drawable to the renderer.
   application_->GetViewDelegate().GetRenderer().AddDrawable(main_drawable_);

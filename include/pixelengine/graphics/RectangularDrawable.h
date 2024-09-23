@@ -7,6 +7,7 @@
 #include <array>
 
 #include "pixelengine/graphics/Drawable.h"
+#include "pixelengine/graphics/ShaderProgram.h"
 
 namespace pixelengine::graphics {
 
@@ -22,7 +23,7 @@ struct VertexData {
 //! \brief A rectangular drawable object.
 class RectangularDrawable : public Drawable {
 public:
-  RectangularDrawable(std::unique_ptr<PipelineState> pipeline_state,
+  RectangularDrawable(ShaderProgram* shader_program,
                       std::size_t texture_width,
                       std::size_t texture_height,
                       MTL::Device* device);
@@ -40,7 +41,7 @@ private:
 
   float x_ {}, y_ {};
 
-  std::array<shadertypes::VertexData, 4> verts_{};
+  std::array<shadertypes::VertexData, 4> verts_ {};
 };
 
 }  // namespace pixelengine::graphics

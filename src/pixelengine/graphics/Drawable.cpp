@@ -6,12 +6,12 @@
 
 namespace pixelengine::graphics {
 
-Drawable::Drawable(std::unique_ptr<PipelineState> pipeline_state)
-      : pipeline_state_(std::move(pipeline_state)) {}
+Drawable::Drawable(ShaderProgram* shader_program)
+      : shader_program_(shader_program) {}
 
 void Drawable::Draw(MTL::RenderCommandEncoder* cmd_encoder) {
   // Set pipeline state.
-  pipeline_state_->SetPipelineState(cmd_encoder);
+  shader_program_->SetPipelineState(cmd_encoder);
 
   updateTextures();
   setArguments(cmd_encoder);

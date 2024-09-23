@@ -38,11 +38,11 @@ add_subdirectory(metal-cmake)  # Library definition
 add_library(
 		PixelEngine_PixelEngine
 		# Source files.
-		src/pixelengine/TextureBitmap.cpp
 		src/pixelengine/MetalImpl.cpp
 		src/pixelengine/application/Game.cpp
 		src/pixelengine/application/AppDelegate.cpp
-		src/pixelengine/graphics/PipelineState.cpp
+		src/pixelengine/graphics/ShaderProgram.cpp
+		src/pixelengine/graphics/TextureBitmap.cpp
 		src/pixelengine/graphics/Drawable.cpp
 		src/pixelengine/graphics/RectangularDrawable.cpp
 		src/pixelengine/input/Input.cpp
