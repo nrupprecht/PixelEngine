@@ -10,19 +10,29 @@
 namespace pixelengine::graphics {
 
 ShaderProgram::ShaderProgram(MTL::Device* device,
-                         std::string body,
-                         std::string vertex_function_name,
-                         std::string fragment_function_name)
-      : body_(std::move(body))
-      , vertex_function_name_(std::move(vertex_function_name))
-      , fragment_function_name_(std::move(fragment_function_name)) {
-
+                             std::string body,
+                             std::string vertex_function_name,
+                             std::string fragment_function_name)
+    : body_(std::move(body))
+    , vertex_function_name_(std::move(vertex_function_name))
+    , fragment_function_name_(std::move(fragment_function_name)) {
   NS::Error* error = nullptr;
   MTL::Library* library =
       device->newLibrary(NS::String::string(body_.c_str(), NS::UTF8StringEncoding), nullptr, &error);
   LL_ASSERT(library, "could not create library: " << error->localizedDescription()->utf8String());
 
   MTL::RenderPipelineDescriptor* pipeline_descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
+
+  // === Set blending ===
+  auto* color_attachment = pipeline_descriptor->colorAttachments()->object(0);
+  color_attachment->setBlendingEnabled(true);
+  color_attachment->setRgbBlendOperation(MTL::BlendOperationAdd);
+  color_attachment->setAlphaBlendOperation(MTL::BlendOperationAdd);
+  color_attachment->setSourceRGBBlendFactor(MTL::BlendFactorSourceColor);
+  color_attachment->setSourceAlphaBlendFactor(MTL::BlendFactorSourceAlpha);
+  color_attachment->setDestinationRGBBlendFactor(MTL::BlendFactorOneMinusSourceColor);
+  color_attachment->setDestinationAlphaBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
+  // === End blending ===
 
   if (!vertex_function_name_.empty()) {
     auto vertex_function = createFunction(vertex_function_name_, library);

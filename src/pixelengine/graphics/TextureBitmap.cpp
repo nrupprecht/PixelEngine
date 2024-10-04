@@ -33,10 +33,6 @@ TextureBitmap& TextureBitmap::operator=(TextureBitmap&& other) noexcept {
   return *this;
 }
 
-// TextureBitmap::~TextureBitmap() {
-//   texture_->release();
-// }
-
 void TextureBitmap::Initialize(std::size_t width, std::size_t height, MTL::Device* device) {
   if (texture_) {
     texture_->release();
@@ -67,6 +63,11 @@ void TextureBitmap::Update() {
   }
 }
 
+void TextureBitmap::Refresh() {
+  MTL::Region region(0, 0, 0, width_, height_, 1);
+  texture_->getBytes(pixel_data.data(), width_ * 4, region, 0);
+}
+
 void TextureBitmap::initialize(MTL::Device* device) {
   auto texture_descriptor = createTextureDescriptor();
   texture_                = device->newTexture(texture_descriptor);
@@ -82,7 +83,7 @@ MTL::TextureDescriptor* TextureBitmap::createTextureDescriptor() const {
   pTextureDesc->setPixelFormat(MTL::PixelFormatRGBA8Unorm);
   pTextureDesc->setTextureType(MTL::TextureType2D);
   pTextureDesc->setStorageMode(MTL::StorageModeManaged);
-  pTextureDesc->setUsage(MTL::ResourceUsageSample | MTL::ResourceUsageRead);
+  pTextureDesc->setUsage(MTL::ResourceUsageSample | MTL::ResourceUsageRead | MTL::ResourceUsageWrite);
   return pTextureDesc;
 }
 
@@ -92,5 +93,6 @@ void TextureBitmap::update() {
   texture_->replaceRegion(region, 0, getData(), width_ * 4);
   is_dirty_ = false;
 }
+
 
 }  // namespace pixelengine

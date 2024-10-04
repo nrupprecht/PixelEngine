@@ -2,9 +2,9 @@
 // Created by Nathaniel Rupprecht on 9/8/24.
 //
 
-#include <iostream>
-
 #include "pixelengine/input/Input.h"
+// Other files.
+#include "pixelengine/utility/Contracts.h"
 
 namespace pixelengine::input {
 
@@ -61,7 +61,7 @@ struct KeyStates {
     for (auto& state : states) {
       state.was_pressed_last_checkpoint = state.is_pressed;
       state.is_just_pressed             = false;
-      state.is_pressed = state.is_pressed && !state.un_press_queued;
+      state.is_pressed                  = state.is_pressed && !state.un_press_queued;
 
       // TODO: Handle shift, caps.
     }
@@ -311,6 +311,137 @@ const char* convertKeyCode(int key_code, bool shift, bool caps) {
   }
 }
 
+uint8_t toKeyCode(std::string_view key) {
+  static const std::unordered_map<std::string_view, int> _key_map =  //
+      {{"a", 0},
+       {"s", 1},
+       {"d", 2},
+       {"f", 3},
+       {"h", 4},
+       {"g", 5},
+       {"z", 6},
+       {"x", 7},
+       {"c", 8},
+       {"v", 9},
+       {"b", 11},
+       {"q", 12},
+       {"w", 13},
+       {"e", 14},
+       {"r", 15},
+       {"y", 16},
+       {"t", 17},
+       {"1", 18},
+       {"2", 19},
+       {"3", 20},
+       {"4", 21},
+       {"6", 22},
+       {"5", 23},
+       {"=", 24},
+       {"9", 25},
+       {"7", 26},
+       {"-", 27},
+       {"8", 28},
+       {"0", 29},
+       {"]", 30},
+       {"o", 31},
+       {"u", 32},
+       {"[", 33},
+       {"i", 34},
+       {"p", 35},
+       {"l", 37},
+       {"j", 38},
+       {"'", 39},
+       {"k", 40},
+       {";", 41},
+       {"\\", 42},
+       {",", 43},
+       {"/", 44},
+       {"n", 45},
+       {"m", 46},
+       {".", 47},
+       {"`", 50},
+       {"[return]", 36},
+       {"[tab]", 48},
+       {" ", 49},
+       {"[del]", 51},
+       {"[esc]", 53},
+       {"[right-cmd]", 54},
+       {"[left-cmd]", 55},
+       {"[left-shift]", 56},
+       {"[caps]", 57},
+       {"[left-option]", 58},
+       {"[left-ctrl]", 59},
+       {"[right-shift]", 60},
+       {"[right-option]", 61},
+       {"[right-ctrl]", 62},
+       {"[fn]", 63},
+       {"[f17]", 64},
+       {"[volup]", 72},
+       {"[voldown]", 73},
+       {"[mute]", 74},
+       {"[f18]", 79},
+       {"[f19]", 80},
+       {"[f20]", 90},
+       {"[f5]", 96},
+       {"[f6]", 97},
+       {"[f7]", 98},
+       {"[f3]", 99},
+       {"[f8]", 100},
+       {"[f9]", 101},
+       {"[f11]", 103},
+       {"[f13]", 105},
+       {"[f16]", 106},
+       {"[f14]", 107},
+       {"[f10]", 109},
+       {"[f12]", 111},
+       {"[f15]", 113},
+       {"[help]", 114},
+       {"[home]", 115},
+       {"[pgup]", 116},
+       {"[fwddel]", 117},
+       {"[f4]", 118},
+       {"[end]", 119},
+       {"[f2]", 120},
+       {"[pgdown]", 121},
+       {"[f1]", 122},
+       {"[left]", 123},
+       {"[right]", 124},
+       {"[down]", 125},
+       {"[up]", 126},
+       {"A", 0},
+       {"S", 1},
+       {"D", 2},
+       {"F", 3},
+       {"H", 4},
+       {"G", 5},
+       {"Z", 6},
+       {"X", 7},
+       {"C", 8},
+       {"V", 9},
+       {"B", 11},
+       {"Q", 12},
+       {"W", 13},
+       {"E", 14},
+       {"R", 15},
+       {"Y", 16},
+       {"T", 17},
+       {"O", 31},
+       {"U", 32},
+       {"I", 34},
+       {"P", 35},
+       {"L", 37},
+       {"J", 38},
+       {"K", 40},
+       {"N", 45},
+       {"M", 46}};
+
+  if (auto it = _key_map.find(key); it != _key_map.end()) {
+    return it->second;
+  }
+  return {};
+}
+
+
 CGEventRef mouseCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void* refcon) {
   // Mouse events.
   if (type == kCGEventLeftMouseDown) {
@@ -341,15 +472,15 @@ CGEventRef keyCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event
     return event;
   }
 
-  CGEventFlags flags = CGEventGetFlags(event);
+  const CGEventFlags flags = CGEventGetFlags(event);
 
   // Retrieve the incoming keycode.
-  auto key_code = static_cast<CGKeyCode>(CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode));
+  const auto key_code = static_cast<CGKeyCode>(CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode));
 
   // Calculate key up/down.
-  bool up         = false;
-  bool down       = false;
-  auto last_flags = _key_states.last_flags;
+  bool up               = false;
+  bool down             = false;
+  const auto last_flags = _key_states.last_flags;
   if (type == kCGEventKeyUp) {
     up = true;
   }
@@ -399,7 +530,6 @@ CGEventRef keyCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event
   // Update flags.
   _key_states.last_flags = flags;
 
-  // std::cout << convertKeyCode(keyCode, shift, caps) << std::endl;
   return event;
 }
 
@@ -475,13 +605,31 @@ bool Input::IsRightMouseJustPressed() {
 }
 
 bool Input::IsPressed(int key_code) {
-  assert(key_code < 127);
+  PIXEL_REQUIRE(key_code < 127, "key code must be < 127, was " << key_code);
   return _key_states.states[key_code].is_pressed;
 }
 
 bool Input::IsJustPressed(int key_code) {
-  assert(key_code < 127);
+  PIXEL_REQUIRE(key_code < 127, "key code must be < 127, was " << key_code);
   return _key_states.states[key_code].is_just_pressed;
+}
+
+bool Input::IsPressed(char key) {
+  std::string_view sv {&key, 1};
+  return IsPressed(sv);
+}
+
+bool Input::IsJustPressed(char key) {
+  std::string_view sv {&key, 1};
+  return IsJustPressed(sv);
+}
+
+bool Input::IsPressed(std::string_view key) {
+  return IsPressed(toKeyCode(key));
+}
+
+bool Input::IsJustPressed(std::string_view key) {
+  return IsJustPressed(toKeyCode(key));
 }
 
 void Input::Update() {

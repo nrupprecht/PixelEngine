@@ -4,16 +4,19 @@
 
 #pragma once
 
-#include <Lightning/Lightning.h>
 #include <cstdlib>  // For rand(), RAND_MAX
+
+#include <Lightning/Lightning.h>
+#include "pixelengine/utility/Vec2.h"
 #include <simd/simd.h>
 
 namespace pixelengine {
 
+
 struct Dimensions {
   std::size_t width, height;
 
-  std::size_t Area() const { return width * height; }
+  [[nodiscard]] std::size_t Area() const { return width * height; }
 };
 
 inline float randf() {

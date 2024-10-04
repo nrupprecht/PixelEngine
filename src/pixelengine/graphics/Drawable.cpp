@@ -9,13 +9,13 @@ namespace pixelengine::graphics {
 Drawable::Drawable(ShaderProgram* shader_program)
       : shader_program_(shader_program) {}
 
-void Drawable::Draw(MTL::RenderCommandEncoder* cmd_encoder) {
+void Drawable::_draw(MTL::RenderCommandEncoder* cmd_encoder) {
   // Set pipeline state.
   shader_program_->SetPipelineState(cmd_encoder);
 
   updateTextures();
   setArguments(cmd_encoder);
-  draw(cmd_encoder);
+  drawVertices(cmd_encoder);
 }
 
 void Drawable::updateTextures() {

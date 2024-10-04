@@ -9,7 +9,7 @@
 
 #include <Lightning/Lightning.h>
 
-#include "pixelengine/Color.h"
+#include "pixelengine/graphics/Color.h"
 #include "pixelengine/utility/Utility.h"
 #include "pixelengine/world/BoundingBox.h"
 
@@ -102,7 +102,7 @@ public:
 };
 
 
-//! \brief The physicsl game world.
+//! \brief The physical game world.
 class World {
 public:
   World(std::size_t chunk_width, std::size_t chunk_height)

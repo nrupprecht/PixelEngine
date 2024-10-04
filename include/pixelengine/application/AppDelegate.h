@@ -17,17 +17,27 @@ public:
   explicit Renderer(MTL::Device* pDevice);
   ~Renderer();
 
-  void Draw(MTK::View* pView);
+  // void Draw(MTK::View* pView);
 
-  void AddDrawable(std::shared_ptr<graphics::Drawable> drawable) {
-    drawables_.push_back(std::move(drawable));
-  }
+  // void AddDrawable(std::shared_ptr<graphics::Drawable> drawable) {
+  //   drawables_.push_back(std::move(drawable));
+  // }
+
+  void BeginDraw(MTK::View* view);
+  MTL::RenderCommandEncoder* BeginCommand() const;
+  void EndCommand(MTL::RenderCommandEncoder* render_command_encoder) const;
+  void EndDraw();
 
 private:
   MTL::Device* device_{};
   MTL::CommandQueue* command_queue_{};
 
-  std::vector<std::shared_ptr<graphics::Drawable>> drawables_;
+  // std::vector<std::shared_ptr<graphics::Drawable>> drawables_;
+
+  MTK::View* current_view_;
+  MTL::CommandBuffer* current_cmd_buffer_{};
+  MTL::RenderPassDescriptor* current_descriptor_{};
+  NS::AutoreleasePool* current_pool_{};
 };
 
 class GameViewDelegate : public MTK::ViewDelegate {
@@ -41,6 +51,10 @@ public:
     draw_view_callback_ = std::move(callback);
   }
 
+  void SetRenderCallback(std::function<void(MTL::RenderCommandEncoder*)> callback) {
+    render_callback_ = std::move(callback);
+  }
+
   [[nodiscard]] Renderer& GetRenderer() const {
     return *renderer_;
   }
@@ -51,6 +65,9 @@ private:
 
   //! \brief Callback to hook the game into the rendering loop.
   std::function<void(float)> draw_view_callback_;
+
+  //! \brief Callback to allow the game to draw using a render command encoder.
+  std::function<void(MTL::RenderCommandEncoder*)> render_callback_;
 
   //! \brief Timing information.
   utility::FrameTimer frame_timer_;

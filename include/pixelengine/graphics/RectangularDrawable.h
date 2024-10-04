@@ -24,22 +24,31 @@ struct VertexData {
 class RectangularDrawable : public Drawable {
 public:
   RectangularDrawable(ShaderProgram* shader_program,
+                      std::unique_ptr<TextureContainer> texture,
+                      MTL::Device* device);
+
+  RectangularDrawable(ShaderProgram* shader_program,
                       std::size_t texture_width,
                       std::size_t texture_height,
                       MTL::Device* device);
 
-  [[nodiscard]] TextureBitmap& GetTextureBitmap() const;
+  [[nodiscard]] TextureContainer& GetTextureBitmap() const;
 
   void SetPosition(float x, float y);
 
   [[nodiscard]] std::array<float, 2> GetPosition() const;
 
+  void SetWidth(float width);
+  void SetHeight(float height);
+
 private:
-  void draw(MTL::RenderCommandEncoder* cmd_encoder) override;
+  void drawVertices(MTL::RenderCommandEncoder* cmd_encoder) override;
+
+  void generateVertices(bool update = true);
 
   utility::AutoBuffer index_buffer_;
 
-  float x_ {}, y_ {};
+  float x_ {}, y_ {}, width_{}, height_{};
 
   std::array<shadertypes::VertexData, 4> verts_ {};
 };

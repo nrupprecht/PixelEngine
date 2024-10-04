@@ -11,7 +11,7 @@
 #include <MetalKit/MetalKit.hpp>
 #include <simd/simd.h>
 
-#include "pixelengine/Color.h"
+#include "pixelengine/graphics/Color.h"
 
 namespace pixelengine {
 
@@ -41,6 +41,7 @@ public:
 
   void Update();
 
+  void Refresh();
 private:
   void initialize(MTL::Device* device);
 

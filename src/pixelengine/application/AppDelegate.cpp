@@ -7,6 +7,8 @@
 #include "pixelengine/application/AppDelegate.h"
 
 #include <Lightning/Lightning.h>
+
+#include "pixelengine/graphics/RectangularDrawable.h"
 // Other files.
 
 namespace pixelengine::app {
@@ -135,7 +137,18 @@ void GameViewDelegate::drawInMTKView(MTK::View* view) {
     draw_view_callback_(delta);
   }
 
-  renderer_->Draw(view);
+  // renderer_->Draw(view);
+
+  if (render_callback_) {
+    renderer_->BeginDraw(view);
+    // Render main objects in the first pass.
+    auto render_command_encoder = renderer_->BeginCommand();
+    render_callback_(render_command_encoder);
+    renderer_->EndCommand(render_command_encoder);
+    // Here, other stages could be rendered.
+    // End, present drawable.
+    renderer_->EndDraw();
+  }
 }
 
 // ===========================================================================================================
@@ -151,32 +164,134 @@ Renderer::~Renderer() {
   device_->release();
 }
 
+void Renderer::BeginDraw(MTK::View* view) {
+  current_view_       = view;
+  current_pool_       = NS::AutoreleasePool::alloc()->init();
+  current_cmd_buffer_ = command_queue_->commandBuffer();
+  current_descriptor_ = view->currentRenderPassDescriptor();
 
-void Renderer::Draw(MTK::View* view) {
-  NS::AutoreleasePool* pPool = NS::AutoreleasePool::alloc()->init();
+  auto&& color_attachment = current_descriptor_->colorAttachments()->object(0);
+  // NOTE: If you want to render to a texture other than the current drawable's texture, set that here.
+  // color_attachment->setTexture(texture_bitmap.GetTexture());
 
-  auto cmd_buffer                                   = command_queue_->commandBuffer();
-  MTL::RenderPassDescriptor* descriptor             = view->currentRenderPassDescriptor();
-  MTL::RenderCommandEncoder* render_command_encoder = cmd_buffer->renderCommandEncoder(descriptor);
-
-  TextureBitmap texture_bitmap(1024, 1024, device_);
-  auto&& color_attachment = descriptor->colorAttachments()->object(0);
-  descriptor->colorAttachments()->object(0)->setTexture(texture_bitmap.GetTexture());
   color_attachment->setLoadAction(MTL::LoadAction::LoadActionClear);
   color_attachment->setStoreAction(MTL::StoreAction::StoreActionStore);
+  color_attachment->setClearColor(MTL::ClearColor(0., 0., 0., 1.));
+}
 
-  for (auto& drawable : drawables_) {
-    drawable->Draw(render_command_encoder);
-  }
+MTL::RenderCommandEncoder* Renderer::BeginCommand() const {
+  return current_cmd_buffer_->renderCommandEncoder(current_descriptor_);
+}
 
+void Renderer::EndCommand(MTL::RenderCommandEncoder* render_command_encoder) const {
   // Render pass is complete.
   render_command_encoder->endEncoding();
-
-  // Finish up
-  cmd_buffer->presentDrawable(view->currentDrawable());
-  cmd_buffer->commit();
-
-  pPool->release();
 }
+
+void Renderer::EndDraw() {
+  auto current_drawable = current_view_->currentDrawable();
+  current_cmd_buffer_->presentDrawable(current_drawable);
+  current_cmd_buffer_->commit();
+
+  if (current_pool_) {
+    current_pool_->release();
+  }
+
+  // Reset the state.
+  current_descriptor_ = {};
+  current_cmd_buffer_ = {};
+  current_pool_       = {};
+  current_view_       = {};
+}
+
+// void Renderer::Draw(MTK::View* view) {
+//   NS::AutoreleasePool* pPool = NS::AutoreleasePool::alloc()->init();
+//
+//   // TextureBitmap texture_bitmap(1024, 1024, device_);
+//
+//   auto cmd_buffer                       = command_queue_->commandBuffer();
+//   MTL::RenderPassDescriptor* descriptor = view->currentRenderPassDescriptor();
+//
+//   auto&& color_attachment = descriptor->colorAttachments()->object(0);
+//   // NOTE: If you want to render to a texture other than the current drawable's texture, set that here.
+//   // color_attachment->setTexture(texture_bitmap.GetTexture());
+//
+//   color_attachment->setLoadAction(MTL::LoadAction::LoadActionClear);
+//   color_attachment->setStoreAction(MTL::StoreAction::StoreActionStore);
+//   color_attachment->setClearColor(MTL::ClearColor(0., 0., 0., 1.));
+//
+//   MTL::RenderCommandEncoder* render_command_encoder = cmd_buffer->renderCommandEncoder(descriptor);
+//   for (auto& drawable : drawables_) {
+//     drawable->Draw(render_command_encoder);
+//   }
+//
+//   // render_command_encoder->endEncoding();
+//
+//
+//   // Second render pass - need a new encoder.
+//   // This is necessary, so we write to the drawable instead of the texture.
+//   // color_attachment->setTexture(view->currentDrawable()->texture());
+//   // MTL::RenderCommandEncoder* second_render_command_encoder = cmd_buffer->renderCommandEncoder(descriptor);
+//
+//   // Second pass.
+//   static std::string body = R"(
+//     using namespace metal;
+//
+//     struct VertexData {
+//          float3 position;
+//          float2 texcoord;
+//     };
+//
+//     struct VertexFragment {
+//        float4 position [[position]];
+//        float2 texcoord;
+//     };
+//
+//     VertexFragment vertex vertexMain(device const VertexData* vertexData [[buffer(0)]], uint vertexID [[vertex_id]] )
+//     {
+//       VertexFragment o;
+//       o.position = float4( vertexData[ vertexID ].position, 1.0 );
+//       o.texcoord = vertexData[ vertexID ].texcoord;
+//       return o;
+//     }
+//
+//     fragment half4 fragment_shader(VertexFragment in [[stage_in]],
+//                                    texture2d<half, access::sample> tex [[texture(0)]]) {
+//
+//       constexpr sampler s( address::repeat, filter::nearest );
+//
+//       float2 pos(in.position[0], in.position[1]);
+//       float2 uv = in.texcoord;
+//
+//       // float2 uv(in.position[0], in.position[1]);
+//       // Distortion logic here, e.g., manipulate uv
+//
+//       // return half4(cos(500 * 2 * 3.14159 * in.position[0]), 1.0, 1.0, 1.0);
+//
+//       float multiplier = 0.5;
+//       if (0.4 < uv.x && uv.x < 0.6 && 0.4 < uv.y && uv.y < 0.6) {
+//         uv.x += sin(uv.y * 50.0) * 0.005;
+//         multiplier *= 2.0;
+//       }
+//       return tex.sample(s, uv) * multiplier;
+//     })";
+//
+//   // static graphics::ShaderProgram program(device_, body, "vertexMain", "fragment_shader");
+//   // auto texture_container = std::make_unique<graphics::TextureWrapper>(texture_bitmap.GetTexture());
+//   // graphics::RectangularDrawable drawable(&program, std::move(texture_container), device_);
+//   // drawable.SetWidth(0.2);
+//   // drawable.SetHeight(0.2);
+//   // drawable.Draw(render_command_encoder); //
+//
+//   // Render pass is complete.
+//   render_command_encoder->endEncoding();  //
+//
+//   // Finish up
+//   auto current_drawable = view->currentDrawable();
+//   cmd_buffer->presentDrawable(current_drawable);
+//   cmd_buffer->commit();
+//
+//   pPool->release();
+// }
 
 }  // namespace pixelengine::app

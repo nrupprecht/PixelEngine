@@ -7,27 +7,32 @@
 namespace pixelengine::graphics {
 
 RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
-                                         std::size_t texture_width,
-                                         std::size_t texture_height,
+                                         std::unique_ptr<TextureContainer> texture,
                                          MTL::Device* device)
-    : Drawable(shader_program) {
-  float end = 1.0;
-
-  verts_[0] = {.position = simd::float3 {-end, +end, 0.0f}, .texcoord = {0.f, 0.f}};
-  verts_[1] = {.position = simd::float3 {-end, -end, 0.0f}, .texcoord = {0.f, 1.f}};
-  verts_[2] = {.position = simd::float3 {+end, -end, 0.0f}, .texcoord = {1.f, 1.f}};
-  verts_[3] = {.position = simd::float3 {+end, +end, 0.0f}, .texcoord = {1.f, 0.f}};
+    : Drawable(shader_program)
+    , width_(2.f)
+    , height_(2.f) {
+  generateVertices(false);
 
   uint16_t indices[] = {0, 1, 2, 0, 2, 3};
 
   buffers_.emplace_back(utility::AutoBuffer::New<shadertypes::VertexData>(device, verts_.data(), 4));
   // Allocate the main texture.
-  textures_.emplace_back(std::make_unique<TextureBitmap>(texture_width, texture_height, device));
+  textures_.emplace_back(std::move(texture));
   // Set index buffer data.
   index_buffer_ = utility::AutoBuffer::New<uint16_t>(device, indices, 6);
 }
 
-TextureBitmap& RectangularDrawable::GetTextureBitmap() const {
+
+RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
+                                         std::size_t texture_width,
+                                         std::size_t texture_height,
+                                         MTL::Device* device)
+    : RectangularDrawable(shader_program,
+                          std::make_unique<TextureBitmapOwning>(texture_width, texture_height, device),
+                          device) {}
+
+TextureContainer& RectangularDrawable::GetTextureBitmap() const {
   return *textures_.at(0);
 }
 
@@ -49,9 +54,30 @@ std::array<float, 2> RectangularDrawable::GetPosition() const {
   return {ave_x, ave_y};
 }
 
-void RectangularDrawable::draw(MTL::RenderCommandEncoder* cmd_encoder) {
+void RectangularDrawable::SetWidth(float width) {
+  width_ = width;
+  generateVertices();
+}
+
+void RectangularDrawable::SetHeight(float height) {
+  height_ = height;
+  generateVertices();
+}
+
+void RectangularDrawable::drawVertices(MTL::RenderCommandEncoder* cmd_encoder) {
   cmd_encoder->drawIndexedPrimitives(
       MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexTypeUInt16, index_buffer_.Data(), 0);
+}
+
+void RectangularDrawable::generateVertices(bool update) {
+  verts_[0] = {.position = simd::float3 {-width_ / 2, +height_ / 2, 0.0f}, .texcoord = {0.f, 0.f}};
+  verts_[1] = {.position = simd::float3 {-width_ / 2, -height_ / 2, 0.0f}, .texcoord = {0.f, 1.f}};
+  verts_[2] = {.position = simd::float3 {+width_ / 2, -height_ / 2, 0.0f}, .texcoord = {1.f, 1.f}};
+  verts_[3] = {.position = simd::float3 {+width_ / 2, +height_ / 2, 0.0f}, .texcoord = {1.f, 0.f}};
+
+  if (update) {
+    buffers_.at(0).CopyInto<shadertypes::VertexData>(verts_.data());
+  }
 }
 
 }  // namespace pixelengine::graphics

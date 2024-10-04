@@ -49,6 +49,10 @@ add_library(
 		src/pixelengine/utility/Utility.cpp
 		src/pixelengine/utility/AutoBuffer.cpp
 		src/pixelengine/world/World.cpp
+		src/pixelengine/physics/PhysicsBody.cpp
+
+		# Really, belongs to a separate library
+		src/minesandmagic/MinesAndMagic.cpp
 )
 
 add_library(PixelEngine::PixelEngine ALIAS PixelEngine_PixelEngine)

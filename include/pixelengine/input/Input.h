@@ -5,6 +5,7 @@
 #pragma once
 
 #include <ApplicationServices/ApplicationServices.h>
+#include <string_view>
 
 namespace pixelengine::input {
 
@@ -23,6 +24,12 @@ public:
 
   static bool IsPressed(int key_code);
   static bool IsJustPressed(int key_code);
+
+  static bool IsPressed(char key);
+  static bool IsJustPressed(char key);
+
+  static bool IsPressed(std::string_view key);
+  static bool IsJustPressed(std::string_view key);
 
   static void Update();
   static void Checkpoint();
