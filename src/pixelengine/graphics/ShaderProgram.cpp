@@ -10,12 +10,13 @@
 namespace pixelengine::graphics {
 
 ShaderProgram::ShaderProgram(MTL::Device* device,
-                             std::string body,
-                             std::string vertex_function_name,
-                             std::string fragment_function_name)
-    : body_(std::move(body))
-    , vertex_function_name_(std::move(vertex_function_name))
-    , fragment_function_name_(std::move(fragment_function_name)) {
+                             std::string_view body,
+                             std::string_view vertex_function_name,
+                             std::string_view fragment_function_name)
+    : body_(body)
+    , vertex_function_name_(vertex_function_name)
+    , fragment_function_name_(fragment_function_name)
+    , device_(device) {
   NS::Error* error = nullptr;
   MTL::Library* library =
       device->newLibrary(NS::String::string(body_.c_str(), NS::UTF8StringEncoding), nullptr, &error);

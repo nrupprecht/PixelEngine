@@ -24,13 +24,11 @@ struct VertexData {
 class RectangularDrawable : public Drawable {
 public:
   RectangularDrawable(ShaderProgram* shader_program,
-                      std::unique_ptr<TextureContainer> texture,
-                      MTL::Device* device);
+                      std::unique_ptr<TextureContainer> texture);
 
   RectangularDrawable(ShaderProgram* shader_program,
                       std::size_t texture_width,
-                      std::size_t texture_height,
-                      MTL::Device* device);
+                      std::size_t texture_height);
 
   [[nodiscard]] TextureContainer& GetTextureBitmap() const;
 
@@ -42,7 +40,7 @@ public:
   void SetHeight(float height);
 
 private:
-  void drawVertices(MTL::RenderCommandEncoder* cmd_encoder) override;
+  void drawVertices(MTL::RenderCommandEncoder* cmd_encoder, Vec2 parent_offset) override;
 
   void generateVertices(bool update = true);
 

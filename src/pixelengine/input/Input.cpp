@@ -4,9 +4,41 @@
 
 #include "pixelengine/input/Input.h"
 // Other files.
+#include <pixelengine/utility/Utility.h>
+
 #include "pixelengine/utility/Contracts.h"
 
 namespace pixelengine::input {
+
+namespace {
+
+std::optional<std::array<float, 2>> getApplicationCursorPosition(CGRect frame) {
+  // Y measured from top left.
+  auto cursor          = input::Input::GetCursorPosition();
+  auto [width, height] = GetScreenResolution();
+  cursor.y             = height - cursor.y;
+
+  auto origin = frame.origin;
+  auto size   = frame.size;
+
+  // TODO: The window's upper bar is 28 pixels tall. How to tell this in general?
+  size.height -= 28;
+
+  if (origin.x <= cursor.x                 //
+      && cursor.x < origin.x + size.width  //
+      && origin.y <= cursor.y              //
+      && cursor.y < origin.y + size.height)
+  {
+    // Normalize cursor position.
+    auto x = static_cast<float>((cursor.x - origin.x) / size.width);
+    auto y = static_cast<float>((cursor.y - origin.y) / size.height);
+
+    return std::array {x, y};
+  }
+  return {};
+}
+
+}  // namespace
 
 //! \brief Structure for keeping track of the mouse states.
 struct MouseStates {
@@ -20,9 +52,12 @@ struct MouseStates {
 
   CGPoint cursor_position {};
 
-  void Update() {
+  std::optional<std::array<float, 2>> application_cursor_position;
+
+  void Update(CGRect application_frame) {
     CGEventRef event = CGEventCreate(nullptr);
     cursor_position  = CGEventGetLocation(event);
+    application_cursor_position = getApplicationCursorPosition(application_frame);
     CFRelease(event);
   }
 
@@ -68,10 +103,14 @@ struct KeyStates {
   }
 };
 
+namespace {
+
 // Key state singleton.
 KeyStates _key_states {};
 
 MouseStates _mouse_states {};
+
+}  // namespace
 
 
 namespace {
@@ -588,6 +627,10 @@ CGPoint Input::GetCursorPosition() {
   return _mouse_states.cursor_position;
 }
 
+std::optional<std::array<float, 2>> Input::GetApplicationCursorPosition() {
+  return _mouse_states.application_cursor_position;
+}
+
 bool Input::IsLeftMousePressed() {
   return _mouse_states.left_mouse_down;
 }
@@ -632,8 +675,8 @@ bool Input::IsJustPressed(std::string_view key) {
   return IsJustPressed(toKeyCode(key));
 }
 
-void Input::Update() {
-  _mouse_states.Update();
+void Input::Update(CGRect application_frame) {
+  _mouse_states.Update(application_frame);
 }
 
 void Input::Checkpoint() {

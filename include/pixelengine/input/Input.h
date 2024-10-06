@@ -17,6 +17,8 @@ public:
   static void Initialize();
 
   [[nodiscard]] static CGPoint GetCursorPosition();
+  [[nodiscard]] static std::optional<std::array<float, 2>> GetApplicationCursorPosition();
+
   static bool IsLeftMousePressed();
   static bool IsRightMousePressed();
   static bool IsLeftMouseJustPressed();
@@ -31,7 +33,7 @@ public:
   static bool IsPressed(std::string_view key);
   static bool IsJustPressed(std::string_view key);
 
-  static void Update();
+  static void Update(CGRect application_frame);
   static void Checkpoint();
 };
 

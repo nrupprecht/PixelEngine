@@ -19,9 +19,16 @@ class PhysicsBody : public Node {
 public:
   PhysicsBody(Vec2 position, float width, float height, Vec2 velocity = {});
 
+  [[nodiscard]] Vec2 GetPosition() const { return position_; }
+  [[nodiscard]] Vec2 GetVelocity() const { return velocity_; }
+
+protected:
+  void clearVelocity();
+  void addVelocityX(float dvx);
+  void addVelocityY(float dvy);
+
 private:
-  void _interactWithWorld(world::World& world) override;
-  void _prePhysics(float dt) override;
+  void _interactWithWorld(world::World* world) override;
   void _updatePhysics(float dt) override;
 
   void updateBodyPhysics(float dt);

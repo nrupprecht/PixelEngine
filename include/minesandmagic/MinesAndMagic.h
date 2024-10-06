@@ -9,15 +9,21 @@
 namespace minesandmagic {
 
 class MinesAndMagic : public pixelengine::app::Game {
-
 public:
-  MinesAndMagic(int tile_width, int tile_height, int window_width, int window_height, const pixelengine::Dimensions& window_dimensions)
-    : Game(tile_width, tile_height, window_width, window_height, window_dimensions) {}
+  MinesAndMagic(uint32_t texture_width,
+                uint32_t texture_height,
+                int window_width,
+                int window_height,
+                const pixelengine::Dimensions& window_dimensions)
+      : Game(window_width, window_height, window_dimensions)
+      , texture_width_(texture_width)
+      , texture_height_(texture_height) {}
 
 private:
   void setup() override;
 
-  void updateWorld(float delta) override;
+  uint32_t texture_width_;
+  uint32_t texture_height_;
 };
 
-}  // namespace pixelengine::minesandmagic
+}  // namespace minesandmagic

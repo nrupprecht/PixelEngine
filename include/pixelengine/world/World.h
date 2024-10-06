@@ -9,6 +9,7 @@
 
 #include <Lightning/Lightning.h>
 
+#include "pixelengine/Node.h"
 #include "pixelengine/graphics/Color.h"
 #include "pixelengine/utility/Utility.h"
 #include "pixelengine/world/BoundingBox.h"
@@ -92,63 +93,32 @@ public:
     velocity_y = std::max(-material->max_speed, std::min(material->max_speed, velocity_y));
   }
 
-  void IncreaseMoves() {
-    ++num_moves;
-  }
+  void IncreaseMoves() { ++num_moves; }
 
-  void DecreaseMoves() {
-    num_moves = 0 < num_moves ? num_moves - 1 : 0;
-  }
+  void DecreaseMoves() { num_moves = 0 < num_moves ? num_moves - 1 : 0; }
 };
 
-
-//! \brief The physical game world.
-class World {
+//! brief The world interface. Allows for accessing pixels / squares, but doesn't put any requirements on
+//!       how the world is stored, cached, saved, updated, etc.
+class World : public Node {
 public:
-  World(std::size_t chunk_width, std::size_t chunk_height)
-      : chunk_width_(chunk_width)
-      , chunk_height_(chunk_height)
-      , active_region_(0, static_cast<long long>(chunk_width), 0, static_cast<long long>(chunk_height))
-      , squares_(chunk_width_ * chunk_height_) {}
+  [[nodiscard]] const Square& GetSquare(long long x, long long y) const { return getSquare(x, y); }
+  [[nodiscard]] Square& GetSquare(long long x, long long y) { return getSquare(x, y); }
+  void SetSquare(long long x, long long y, const Square& square) { setSquare(x, y, square); }
 
-  [[nodiscard]] const Square& GetSquare(std::size_t x, std::size_t y) const { return getSquare(x, y); }
-  [[nodiscard]] Square& GetSquare(std::size_t x, std::size_t y) { return getSquare(x, y); }
-
-  void SetSquare(std::size_t x, std::size_t y, const Square& square) {
-    active_region_.Update(x, y);
-    getSquare(x, y) = square;
-  }
-
-  void Update(float dt) { evolve(dt); }
-
-  [[nodiscard]] std::size_t GetWidth() const { return chunk_width_; }
-  [[nodiscard]] std::size_t GetHeight() const { return chunk_height_; }
-  [[nodiscard]] float GetGravity() const { return gravity_; }
-
-  [[nodiscard]] const BoundingBox& GetActiveRegion() const { return active_region_; }
+  [[nodiscard]] bool IsValidSquare(long long x, long long y) const { return isValidSquare(x, y); }
 
 private:
-  std::size_t chunk_width_;
-  std::size_t chunk_height_;
+  [[nodiscard]] virtual const Square& getSquare(long long x, long long y) const = 0;
+  [[nodiscard]] virtual Square& getSquare(long long x, long long y)             = 0;
+  virtual void setSquare(long long x, long long y, const Square& square)        = 0;
+  [[nodiscard]] virtual bool isValidSquare(long long x, long long y) const      = 0;
 
-  BoundingBox active_region_;
+  // ===========================================================================
+  //  Node overrides.
+  // ===========================================================================
 
-  //! \brief Acceleration due to gravity, in squares per second squared.
-  float gravity_ = -100.;
-
-  void evolve(float dt);
-
-  Square& getSquare(std::size_t x, std::size_t y) {
-    LL_ASSERT(x < chunk_width_ && y < chunk_height_, "out of bounds");
-    return squares_[y * chunk_width_ + x];
-  }
-
-  [[nodiscard]] const Square& getSquare(std::size_t x, std::size_t y) const {
-    LL_ASSERT(x < chunk_width_ && y < chunk_height_, "out of bounds");
-    return squares_[y * chunk_width_ + x];
-  }
-
-  std::vector<Square> squares_;
+  [[nodiscard]] World* _setWorld(World*) final { return this; }
 };
 
 //! \brief Stationary square behavior. The square will never move.
@@ -159,7 +129,7 @@ class Stationary : public SquareBehavior {
 //! \brief Physics square behavior.
 class Physics : public SquareBehavior {
 public:
-  explicit Physics(bool allow_sideways) : allow_sideways_(allow_sideways) {}
+  constexpr explicit Physics(bool allow_sideways) : allow_sideways_(allow_sideways) {}
 
   BoundingBox Update(float dt, std::size_t x, std::size_t y, World& world) const override {
     auto& square = world.GetSquare(x, y);
@@ -254,18 +224,10 @@ private:
   }
 
   static bool trySwap(World& world, Square& square, std::size_t x, std::size_t y, int dx, int dy) {
-    if (dx < 0 && x == 0) {
+    if (!world.IsValidSquare(x + dx, y + dy)) {
       return false;
     }
-    if (dx > 0 && x == world.GetWidth() - 1) {
-      return false;
-    }
-    if (dy < 0 && y == 0) {
-      return false;
-    }
-    if (dy > 0 && y == world.GetHeight() - 1) {
-      return false;
-    }
+
     auto& candidate = world.GetSquare(x + dx, y + dy);
     auto& material  = square.material;
     if (!candidate.material->is_rigid && candidate.material->mass < material->mass) {
@@ -288,12 +250,12 @@ private:
 
 class FallingPhysics : public Physics {
 public:
-  FallingPhysics() : Physics(false) {}
+  constexpr FallingPhysics() : Physics(false) {}
 };
 
 class LiquidPhysics : public Physics {
 public:
-  LiquidPhysics() : Physics(true) {}
+  constexpr LiquidPhysics() : Physics(true) {}
 };
 
 

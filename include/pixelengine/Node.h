@@ -5,10 +5,10 @@
 #pragma once
 
 #include <list>
-#include <memory>
-#include <AppKit/AppKit.hpp>
 #include <Metal/Metal.hpp>
 #include <MetalKit/MetalKit.hpp>
+
+#include "utility/Vec2.h"
 
 
 namespace pixelengine {
@@ -46,9 +46,7 @@ public:
     }
   }
 
-  Node& AsNode() {
-    return *this;
-  }
+  Node& AsNode() { return *this; }
 
 private:
   void addedBy(Node* parent) {
@@ -67,10 +65,14 @@ private:
     }
   }
 
-  void interactWithWorld(world::World& world) {
+  void interactWithWorld(world::World* world) {
     _interactWithWorld(world);
+
+    // Potentially pass a different world to lower levels. This should done e.g. if this node is itself a
+    // world.
+    auto world_to_pass = _setWorld(world);
     for (auto& child : children_) {
-      child->interactWithWorld(world);
+      child->interactWithWorld(world_to_pass);
     }
   }
 
@@ -81,10 +83,15 @@ private:
     }
   }
 
-  void updatePhysics(float dt) {
+  void updatePhysics(float dt, world::World* world) {
+    _interactWithWorld(world);
     _updatePhysics(dt);
+
+    // Potentially pass a different world to lower levels. This should done e.g. if this node is itself a
+    // world.
+    auto world_to_pass = _setWorld(world);
     for (auto& child : children_) {
-      child->updatePhysics(dt);
+      child->updatePhysics(dt, world_to_pass);
     }
   }
 
@@ -92,6 +99,13 @@ private:
     _update(dt);
     for (auto& child : children_) {
       child->update(dt);
+    }
+  }
+
+  void draw(MTL::RenderCommandEncoder* render_command_encoder, Vec2 parent_offset) {
+    _draw(render_command_encoder, parent_offset);
+    for (auto& child : children_) {
+      child->draw(render_command_encoder, parent_offset + position_);
     }
   }
 
@@ -104,16 +118,27 @@ private:
   }
 
 protected:
-  virtual void _interactWithWorld(world::World& world) {}
+  virtual void _interactWithWorld(world::World* world) {}
+
   virtual void _prePhysics(float dt) {}
   virtual void _updatePhysics(float dt) {}
   virtual void _update(float dt) {}
 
-  virtual void _draw(MTL::RenderCommandEncoder* render_command_encoder) {}
+  virtual void _draw(MTL::RenderCommandEncoder* render_command_encoder, Vec2 parent_offset) {}
 
   virtual void _onAddedBy(Node* parent) {}
 
+protected:
+  // ===========================================================================
+  //  Special overrideable functions.
+  // ===========================================================================
+
+  //! \brief Set the world that should be passed to children of this node.
+  [[nodiscard]] virtual world::World* _setWorld(world::World* world) { return world; }
+
 private:
+  Vec2 position_ {};  // Position relative to parent.
+
   Node* parent_ {};
 
   bool queued_for_deletion_ {false};

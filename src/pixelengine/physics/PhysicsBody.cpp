@@ -12,9 +12,23 @@ PhysicsBody::PhysicsBody(Vec2 position, float width, float height, Vec2 velocity
     , height_(height)
     , velocity_(velocity) {}
 
-void PhysicsBody::_interactWithWorld(world::World& world) {
+void PhysicsBody::clearVelocity() {
+  velocity_ = {};
+}
+
+void PhysicsBody::addVelocityX(float dvx) {
+  velocity_.x += dvx;
+}
+
+void PhysicsBody::addVelocityY(float dvy) {
+  velocity_.y += dvy;
+}
+
+void PhysicsBody::_interactWithWorld(world::World* world) {
   Node::_interactWithWorld(world);
-  checkCollisions(world);
+  if (world) {
+    checkCollisions(*world);
+  }
 }
 
 void PhysicsBody::_updatePhysics(float dt) {
@@ -58,6 +72,10 @@ void PhysicsBody::checkCollisions(world::World& world) {
 
   // Check left side.
   for (auto y = bottom; y < top; ++y) {
+    if (!world.IsValidSquare(left - 1, y)) {
+      new_state.blocked_left = true;
+      break;
+    }
     auto&& square = world.GetSquare(left - 1, y);
     if (square.is_occupied) {
       new_state.blocked_left = true;
@@ -67,6 +85,10 @@ void PhysicsBody::checkCollisions(world::World& world) {
 
   // Check right side.
   for (auto y = bottom; y < top; ++y) {
+    if (!world.IsValidSquare(right, y)) {
+      new_state.blocked_left = true;
+      break;
+    }
     auto&& square = world.GetSquare(right, y);
     if (square.is_occupied) {
       new_state.blocked_right = true;
@@ -76,6 +98,10 @@ void PhysicsBody::checkCollisions(world::World& world) {
 
   // Check top side.
   for (auto x = left; x < right; ++x) {
+    if (!world.IsValidSquare(x, top)) {
+      new_state.blocked_left = true;
+      break;
+    }
     auto&& square = world.GetSquare(x, top);
     if (square.is_occupied) {
       new_state.blocked_up = true;
@@ -85,6 +111,10 @@ void PhysicsBody::checkCollisions(world::World& world) {
 
   // Check bottom side.
   for (auto x = left; x < right; ++x) {
+    if (!world.IsValidSquare(right, bottom - 1)) {
+      new_state.blocked_left = true;
+      break;
+    }
     auto&& square = world.GetSquare(x, bottom - 1);
     if (square.is_occupied) {
       new_state.blocked_down = true;
@@ -97,6 +127,9 @@ void PhysicsBody::checkCollisions(world::World& world) {
   // ========================
 
   auto check_corner = [&](long long x, long long y) {
+    if (!world.IsValidSquare(x, y)) {
+      return true;
+    }
     auto&& square = world.GetSquare(x, y);
     return square.is_occupied;
   };

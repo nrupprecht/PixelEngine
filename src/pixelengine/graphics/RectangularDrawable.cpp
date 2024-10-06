@@ -7,14 +7,15 @@
 namespace pixelengine::graphics {
 
 RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
-                                         std::unique_ptr<TextureContainer> texture,
-                                         MTL::Device* device)
+                                         std::unique_ptr<TextureContainer> texture)
     : Drawable(shader_program)
     , width_(2.f)
     , height_(2.f) {
   generateVertices(false);
 
   uint16_t indices[] = {0, 1, 2, 0, 2, 3};
+
+  auto device = shader_program->GetDevice();
 
   buffers_.emplace_back(utility::AutoBuffer::New<shadertypes::VertexData>(device, verts_.data(), 4));
   // Allocate the main texture.
@@ -26,11 +27,11 @@ RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
 
 RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
                                          std::size_t texture_width,
-                                         std::size_t texture_height,
-                                         MTL::Device* device)
-    : RectangularDrawable(shader_program,
-                          std::make_unique<TextureBitmapOwning>(texture_width, texture_height, device),
-                          device) {}
+                                         std::size_t texture_height)
+    : RectangularDrawable(
+          shader_program,
+          std::make_unique<TextureBitmapOwning>(texture_width, texture_height, shader_program->GetDevice())) {
+}
 
 TextureContainer& RectangularDrawable::GetTextureBitmap() const {
   return *textures_.at(0);
@@ -64,7 +65,9 @@ void RectangularDrawable::SetHeight(float height) {
   generateVertices();
 }
 
-void RectangularDrawable::drawVertices(MTL::RenderCommandEncoder* cmd_encoder) {
+void RectangularDrawable::drawVertices(MTL::RenderCommandEncoder* cmd_encoder, Vec2 parent_offset) {
+  // TODO: Update vertices.
+
   cmd_encoder->drawIndexedPrimitives(
       MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexTypeUInt16, index_buffer_.Data(), 0);
 }

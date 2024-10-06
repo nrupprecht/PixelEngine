@@ -45,14 +45,16 @@ add_library(
 		src/pixelengine/graphics/TextureBitmap.cpp
 		src/pixelengine/graphics/Drawable.cpp
 		src/pixelengine/graphics/RectangularDrawable.cpp
+		src/pixelengine/graphics/ShaderStore.cpp
 		src/pixelengine/input/Input.cpp
 		src/pixelengine/utility/Utility.cpp
 		src/pixelengine/utility/AutoBuffer.cpp
-		src/pixelengine/world/World.cpp
 		src/pixelengine/physics/PhysicsBody.cpp
 
 		# Really, belongs to a separate library
 		src/minesandmagic/MinesAndMagic.cpp
+		src/minesandmagic/Player.cpp
+		src/minesandmagic/SingleChunkWorld.cpp
 )
 
 add_library(PixelEngine::PixelEngine ALIAS PixelEngine_PixelEngine)
