@@ -9,10 +9,11 @@
 namespace minesandmagic {
 
 using pixelengine::Vec2;
+using pixelengine::PVec2;
 
 class Player : public pixelengine::physics::PhysicsBody {
 public:
-  Player(Vec2 position, float width, float height, Vec2 velocity = {})
+  Player(PVec2 position, unsigned width, unsigned height, Vec2 velocity = {})
     : PhysicsBody(position, width, height, velocity) {}
 
 private:

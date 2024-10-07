@@ -17,59 +17,27 @@ namespace minesandmagic {
 SingleChunkWorld::SingleChunkWorld(std::size_t chunk_width, std::size_t chunk_height)
     : chunk_width_(chunk_width)
     , chunk_height_(chunk_height)
+    // TODO: Get the actual window width and height? Do we really need these in this struct?
+    , world_context_ {0.f, static_cast<float>(chunk_width), 0.f, static_cast<float>(chunk_height)}
     , active_region_(0, static_cast<long long>(chunk_width), 0, static_cast<long long>(chunk_height))
     , squares_(chunk_width_ * chunk_height_) {
-  std::string shader = R"(
-      #include <metal_stdlib>
-      using namespace metal;
-
-      struct VertexData
-       {
-           float3 position;
-           float2 texcoord;
-       };
-
-       struct VertexFragment
-       {
-         float4 position [[position]];
-         float2 texcoord;
-       };
-
-      VertexFragment vertex vertexMain( device const VertexData* vertexData [[buffer(0)]], uint vertexID [[vertex_id]] )
-      {
-        VertexFragment o;
-        o.position = float4( vertexData[ vertexID ].position, 1.0 );
-        o.texcoord = vertexData[ vertexID ].texcoord;
-        return o;
-      }
-
-      half4 fragment fragmentMain(
-        VertexFragment in [[stage_in]],
-        texture2d<half, access::sample> tex [[texture(0)]]
-      )
-      {
-        constexpr float scale = 0.01;
-
-        constexpr sampler s( address::repeat, filter::nearest );
-        half3 texel = tex.sample( s, in.texcoord ).rgb;
-        return half4( texel, 1.0 );
-      }
-  )";
-
-  auto shader_program = graphics::ShaderStore::GetInstance()->CreateShaderProgram(
-      "WorldShader", shader, "vertexMain", "fragmentMain");
-  PIXEL_ASSERT(shader_program, "could not create shader program");
+  auto shader_program = graphics::ShaderStore::GetInstance()->GetShaderProgram("TextureShader");
+  PIXEL_ASSERT(shader_program, "could not get shader program");
 
   world_texture_.Initialize(chunk_width, chunk_height, shader_program->GetDevice());
 
   auto drawable = std::make_unique<graphics::RectangularDrawable>(
       shader_program, std::make_unique<graphics::TextureWrapper>(world_texture_.GetTexture()));
+  drawable->SetWidth(chunk_width);
+  drawable->SetHeight(chunk_height);
+  drawable->SetName("WorldTexture");
 
   AddChild(std::move(drawable));
 }
 
 
 void SingleChunkWorld::_draw(MTL::RenderCommandEncoder* render_command_encoder,
+                             WindowContext* context,
                              pixelengine::Vec2 parent_offset) {
   // Update pixels to render the world.
   for (auto j = 0ull; j < world_texture_.GetHeight(); ++j) {
@@ -150,7 +118,7 @@ void SingleChunkWorld::_updatePhysics(float raw_dt) {
 
 void SingleChunkWorld::_update(float dt) {
   static unsigned brush_type = 0;
-  if (input::Input::IsJustPressed('D') /* D */) {
+  if (input::Input::IsJustPressed('B')) {
     brush_type += 1;
     brush_type = brush_type % 3;
   }

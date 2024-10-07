@@ -10,8 +10,7 @@
 
 namespace pixelengine::app {
 
-Game::Game(std::size_t width, std::size_t height, Dimensions window_dimensions)
-    : window_dimensions_(window_dimensions) {}
+Game::Game(Dimensions window_dimensions) : window_dimensions_(window_dimensions) {}
 
 Game::~Game() {
   // Clean up shader program store.
@@ -65,6 +64,9 @@ void Game::Run() {
 void Game::update(float delta) {
   using namespace pixelengine::world;
 
+  // Potentially limit how large delta can be.
+  delta = std::min(1.f / 60.f, delta);
+
   // Update the input object.
   input::Input::Update(application_->GetFrame());
 
@@ -110,7 +112,7 @@ void Game::setDelegates() {
   application_->GetViewDelegate().SetRenderCallback(
       [this](MTL::RenderCommandEncoder* render_command_encoder) {
         for (auto& node : nodes_) {
-          node->draw(render_command_encoder, {} /* No parent offset. */);
+          node->draw(render_command_encoder, {} /* no window context */, {} /* No parent offset. */);
         }
       });
 

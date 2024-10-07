@@ -29,9 +29,9 @@ ShaderProgram::ShaderProgram(MTL::Device* device,
   color_attachment->setBlendingEnabled(true);
   color_attachment->setRgbBlendOperation(MTL::BlendOperationAdd);
   color_attachment->setAlphaBlendOperation(MTL::BlendOperationAdd);
-  color_attachment->setSourceRGBBlendFactor(MTL::BlendFactorSourceColor);
+  color_attachment->setSourceRGBBlendFactor(MTL::BlendFactorSourceAlpha);
   color_attachment->setSourceAlphaBlendFactor(MTL::BlendFactorSourceAlpha);
-  color_attachment->setDestinationRGBBlendFactor(MTL::BlendFactorOneMinusSourceColor);
+  color_attachment->setDestinationRGBBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
   color_attachment->setDestinationAlphaBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
   // === End blending ===
 

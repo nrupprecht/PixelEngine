@@ -17,7 +17,7 @@ namespace pixelengine::app {
 //! \brief Class for the game engine.
 class Game {
 public:
-  Game(std::size_t width, std::size_t height, Dimensions window_dimensions);
+  Game(Dimensions window_dimensions);
 
   ~Game();
 

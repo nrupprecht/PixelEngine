@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
   // Game window dimensions.
   Dimensions window_dimensions {1400, 800};
 
-  minesandmagic::MinesAndMagic game(432, 240, 432, 240, window_dimensions);
+  minesandmagic::MinesAndMagic game(432, 240, window_dimensions);
 
   game.Initialize();
   game.Run();

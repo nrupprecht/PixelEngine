@@ -6,16 +6,17 @@
 
 namespace pixelengine::graphics {
 
-Drawable::Drawable(ShaderProgram* shader_program)
-      : shader_program_(shader_program) {}
+Drawable::Drawable(ShaderProgram* shader_program) : shader_program_(shader_program) {}
 
-void Drawable::_draw(MTL::RenderCommandEncoder* cmd_encoder, Vec2 parent_offset) {
+void Drawable::_draw(MTL::RenderCommandEncoder* cmd_encoder,
+                     application::WindowContext* context,
+                     Vec2 parent_offset) {
   // Set pipeline state.
   shader_program_->SetPipelineState(cmd_encoder);
 
   updateTextures();
   setArguments(cmd_encoder);
-  drawVertices(cmd_encoder, parent_offset);
+  drawVertices(cmd_encoder, context, parent_offset);
 }
 
 void Drawable::updateTextures() {

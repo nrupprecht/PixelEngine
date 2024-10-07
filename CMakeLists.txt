@@ -49,6 +49,7 @@ add_library(
 		src/pixelengine/input/Input.cpp
 		src/pixelengine/utility/Utility.cpp
 		src/pixelengine/utility/AutoBuffer.cpp
+		src/pixelengine/utility/PathGenerator.cpp
 		src/pixelengine/physics/PhysicsBody.cpp
 
 		# Really, belongs to a separate library

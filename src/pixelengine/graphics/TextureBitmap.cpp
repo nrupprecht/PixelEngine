@@ -51,6 +51,13 @@ void TextureBitmap::SetPixel(std::size_t x, std::size_t y, const Color& color) {
   is_dirty_         = true;
 }
 
+void TextureBitmap::SetAllPixels(const Color& color) {
+  for (auto& pixel : pixel_data) {
+    pixel = color;
+  }
+  is_dirty_ = true;
+}
+
 Color TextureBitmap::GetPixel(std::size_t x, std::size_t y) const {
   assert(x < width_ && y < height_);  // TODO: Other assert type.
   auto index = y * width_ + x;

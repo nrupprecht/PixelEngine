@@ -34,12 +34,19 @@ struct Material {
 
   //! \brief Whether or not the material is fixed in place.
   bool is_rigid = false;
+
+  //! \brief The phase of matter of the material.
+  PhaseOfMatter phase_of_matter = PhaseOfMatter::SOLID;
+
+  [[nodiscard]] bool IsSolid() const noexcept {
+    return static_cast<uint8_t>(phase_of_matter) & static_cast<uint8_t>(PhaseOfMatter::SOLID);
+  }
 };
 
-constexpr Material AIR {};
-constexpr Material SAND {.mass = 2.0, .is_rigid = false};
-constexpr Material WATER {.mass = 1.5, .is_rigid = false};
-constexpr Material DIRT {.mass = 3.0, .is_rigid = true};
+constexpr Material AIR {.phase_of_matter = PhaseOfMatter::GAS};
+constexpr Material SAND {.mass = 2.0, .is_rigid = false, .phase_of_matter = PhaseOfMatter::SOLID};
+constexpr Material WATER {.mass = 1.5, .is_rigid = false, .phase_of_matter = PhaseOfMatter::LIQUID};
+constexpr Material DIRT {.mass = 3.0, .is_rigid = true, .phase_of_matter = PhaseOfMatter::SOLID};
 
 
 //! \brief Class that represents how a square "behaves," i.e., its physical properties.

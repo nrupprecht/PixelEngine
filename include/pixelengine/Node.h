@@ -5,10 +5,12 @@
 #pragma once
 
 #include <list>
+
 #include <Metal/Metal.hpp>
 #include <MetalKit/MetalKit.hpp>
 
-#include "utility/Vec2.h"
+#include "pixelengine/utility/Vec2.h"
+#include "pixelengine/utility/WindowContext.h"
 
 
 namespace pixelengine {
@@ -29,16 +31,24 @@ class Node {
   friend class app::Game;
 
 public:
+  Node()          = default;
   virtual ~Node() = default;
 
+  //! \brief Set an identifying name for the node. Purely for debuging purposes.
+  void SetName(std::string name) { name_ = std::move(name); }
+
+  //! \brief Get the name of the node.
+  [[nodiscard]] const std::string& GetName() const { return name_; }
+
+  //! \brief Add a child of the node. Adds as the child with the least precedence.
   void AddChild(std::unique_ptr<Node> child) {
     if (child->parent_) {
       child->parent_->QueueRemoveChild(child.get());
     }
-    children_.push_back(std::move(child));
-    children_.back()->addedBy(this);
+    queued_children_.push_back(std::move(child));
   }
 
+  //! \brief Queue a node to be removed as a child of this node. If the node is not a child, does nothing.
   void QueueRemoveChild(Node* child) {
     auto it = std::ranges::find_if(children_, [child](const auto& c) { return c.get() == child; });
     if (it != children_.end()) {
@@ -55,11 +65,25 @@ private:
   }
 
   void removeQueuedChildren() {
-    children_.remove_if([](const auto& child) { return child->queued_for_deletion_; });
+    children_.remove_if([this](const auto& child) {
+      if (child->queued_for_deletion_) {
+        _childLeaving(child.get());
+        child->_onLeavingFrom(this);
+      }
+      return child->queued_for_deletion_;
+    });
   }
 
   void addQueuedChildren() {
+    auto former_size = children_.size();
     children_.splice(children_.end(), std::move(queued_children_));
+    auto count = 0;
+    for (auto it = children_.rbegin(); former_size < children_.size() - count; ++it, ++count) {
+      // Callback to the node that it was added to the parent
+      (*it)->addedBy(this);
+      _childEntering(it->get());
+    }
+
     for (auto& child : children_) {
       child->addQueuedChildren();
     }
@@ -102,10 +126,14 @@ private:
     }
   }
 
-  void draw(MTL::RenderCommandEncoder* render_command_encoder, Vec2 parent_offset) {
-    _draw(render_command_encoder, parent_offset);
+  void draw(MTL::RenderCommandEncoder* render_command_encoder,
+            application::WindowContext* context,
+            Vec2 parent_offset) {
+    _draw(render_command_encoder, context, parent_offset);
+    auto context_to_pass   = _chooseWindowContext(context);
+    auto additional_offset = _additionalOffset();
     for (auto& child : children_) {
-      child->draw(render_command_encoder, parent_offset + position_);
+      child->draw(render_command_encoder, context_to_pass, parent_offset + additional_offset);
     }
   }
 
@@ -124,11 +152,21 @@ protected:
   virtual void _updatePhysics(float dt) {}
   virtual void _update(float dt) {}
 
-  virtual void _draw(MTL::RenderCommandEncoder* render_command_encoder, Vec2 parent_offset) {}
+  virtual void _draw(MTL::RenderCommandEncoder* render_command_encoder,
+                     application::WindowContext* context,
+                     Vec2 parent_offset) {}
 
+  //! \brief Called right after the node is added to the Tree, and before the parent has _childEntering
+  //!        called.
   virtual void _onAddedBy(Node* parent) {}
+  //! \brief Called right after the child node enters the Tree.
+  virtual void _childEntering(Node* child) {}
 
-protected:
+  //! \brief Called right before the child node exits the Tree.
+  virtual void _childLeaving(Node* child) {}
+  //! \brief Called right before the node is removed from the Tree, and after the parent has _childLeaving
+  virtual void _onLeavingFrom(Node* parent) {}
+
   // ===========================================================================
   //  Special overrideable functions.
   // ===========================================================================
@@ -136,8 +174,20 @@ protected:
   //! \brief Set the world that should be passed to children of this node.
   [[nodiscard]] virtual world::World* _setWorld(world::World* world) { return world; }
 
+  //! \brief Set the window context that should be passed to children of this node.
+  [[nodiscard]] virtual application::WindowContext* _chooseWindowContext(
+      application::WindowContext* context) {
+    return context;
+  }
+
+  [[nodiscard]] virtual Vec2 _additionalOffset() const { return {}; }
+
+  // ===========================================================================
+  //  Protected member variables.
+  // ===========================================================================
+
 private:
-  Vec2 position_ {};  // Position relative to parent.
+  std::string name_ = "<unnamed>";
 
   Node* parent_ {};
 

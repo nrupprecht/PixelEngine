@@ -11,6 +11,7 @@
 namespace minesandmagic {
 
 using namespace pixelengine::world;
+using namespace pixelengine::application;
 
 //! \brief The physical game world.
 class SingleChunkWorld : public World {
@@ -28,7 +29,13 @@ private:
 
   void _updatePhysics(float dt) override;
 
-  void _draw(MTL::RenderCommandEncoder* render_command_encoder, pixelengine::Vec2 parent_offset) override;
+  void _draw(MTL::RenderCommandEncoder* render_command_encoder,
+             WindowContext* context,
+             pixelengine::Vec2 parent_offset) override;
+
+  WindowContext* _chooseWindowContext(WindowContext* context) override {
+    return &world_context_; // What if the incoming context is not null?
+  }
 
   void setSquare(long long x, long long y, const Square& square) override {
     active_region_.Update(x, y);
@@ -41,6 +48,8 @@ private:
 
   std::size_t chunk_width_;
   std::size_t chunk_height_;
+
+  WindowContext world_context_;
 
   BoundingBox active_region_;
 

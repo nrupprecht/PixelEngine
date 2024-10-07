@@ -13,23 +13,28 @@ void Player::_update(float dt) {
 
   Node::_update(dt);
 
-  clearVelocity();
+  bool moving_x = false;
   if (Input::IsPressed('D')) {
-    addVelocityX(10.);
+    applyForceX(+10.);
+    moving_x = true;
   }
   if (Input::IsPressed('A')) {
-    addVelocityX(-10.);
+    applyForceX(-10.);
+    moving_x = true;
   }
 
-  // Temporary.
-  if (Input::IsPressed('W')) {
-    addVelocityY(10.);
-  }
-  if (Input::IsPressed('S')) {
-    addVelocityY(-10.);
+  // Standing still.
+  if (!moving_x && GetState().blocked_down) {
+    setVelocityX(0.f);
   }
 
-  LOG_SEV(Debug) << "Player position: " << GetPosition().x << ", " << GetPosition().y << ".";
+  // Jump.
+  if (Input::IsPressed('W') && GetState().blocked_down /* Standing */) {
+    addVelocityY(+4.f);
+  }
+
+  LOG_SEV(Debug) << "Player position: " << GetPosition().x << ", " << GetPosition().y << ", blocking: ["
+                 << GetState() << "].";
 }
 
 }  // namespace minesandmagic

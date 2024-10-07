@@ -33,6 +33,8 @@ public:
 
   void SetPixel(std::size_t x, std::size_t y, const Color& color);
 
+  void SetAllPixels(const Color& color);
+
   [[nodiscard]] Color GetPixel(std::size_t x, std::size_t y) const;
 
   [[nodiscard]] std::size_t GetWidth() const { return width_; }

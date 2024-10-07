@@ -23,12 +23,9 @@ struct VertexData {
 //! \brief A rectangular drawable object.
 class RectangularDrawable : public Drawable {
 public:
-  RectangularDrawable(ShaderProgram* shader_program,
-                      std::unique_ptr<TextureContainer> texture);
+  RectangularDrawable(ShaderProgram* shader_program, std::unique_ptr<TextureContainer> texture);
 
-  RectangularDrawable(ShaderProgram* shader_program,
-                      std::size_t texture_width,
-                      std::size_t texture_height);
+  RectangularDrawable(ShaderProgram* shader_program, std::size_t texture_width, std::size_t texture_height);
 
   [[nodiscard]] TextureContainer& GetTextureBitmap() const;
 
@@ -39,14 +36,20 @@ public:
   void SetWidth(float width);
   void SetHeight(float height);
 
+  //! \brief Replace the current texture with a new one, returning the old one.
+  [[nodiscard]] std::unique_ptr<TextureContainer> SwapTextures(std::unique_ptr<TextureContainer> new_texture);
+
 private:
-  void drawVertices(MTL::RenderCommandEncoder* cmd_encoder, Vec2 parent_offset) override;
+  void drawVertices(MTL::RenderCommandEncoder* cmd_encoder,
+                    application::WindowContext* context,
+                    Vec2 parent_offset) override;
 
   void generateVertices(bool update = true);
 
   utility::AutoBuffer index_buffer_;
 
-  float x_ {}, y_ {}, width_{}, height_{};
+  Vec2 position_;
+  float width_ {}, height_ {};
 
   std::array<shadertypes::VertexData, 4> verts_ {};
 };
