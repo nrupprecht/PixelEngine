@@ -147,10 +147,13 @@ public:
 
     BoundingBox bounding_box;
 
+    auto original_x = x, original_y = y;
+    bool did_update = false;
     for (; 1.f <= v; ++iterations) {
       std::tie(x, y, is_blocked) = singleUpdate(x, y, v, world);
       if (!is_blocked) {
         bounding_box.Update(x, y);
+        did_update = true;
       }
     }
 
@@ -160,6 +163,7 @@ public:
     if (!is_blocked && randf() < v - std::floorf(v)) {
       bounding_box.Update(x, y);
       ++iterations;
+      did_update = true;
     }
     else {
       // Undo the movement.
@@ -169,6 +173,12 @@ public:
       // Undo the move count.
       world.GetSquare(x, y).DecreaseMoves();
       world.GetSquare(new_x, new_y).DecreaseMoves();
+    }
+
+    if (did_update) {
+      // Mark the original square as having been updated (since whatever square the original square moved to
+      // was swapped to this square).
+      bounding_box.Update(original_x, original_y);
     }
 
     if (!is_blocked) {
