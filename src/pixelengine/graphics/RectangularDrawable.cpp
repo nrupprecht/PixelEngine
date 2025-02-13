@@ -9,10 +9,12 @@
 namespace pixelengine::graphics {
 
 RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
+                                         float width,
+                                         float height,
                                          std::unique_ptr<TextureContainer> texture)
     : Drawable(shader_program)
-    , width_(2.f)
-    , height_(2.f) {
+    , width_(width)
+    , height_(height) {
   generateVertices(false);
 
   uint16_t indices[] = {0, 1, 2, 0, 2, 3};
@@ -34,6 +36,8 @@ RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
                                          std::size_t texture_height)
     : RectangularDrawable(
           shader_program,
+          static_cast<float>(texture_width),
+          static_cast<float>(texture_height),
           std::make_unique<TextureBitmapOwning>(texture_width, texture_height, shader_program->GetDevice())) {
 }
 
@@ -81,8 +85,6 @@ std::unique_ptr<TextureContainer> RectangularDrawable::SwapTextures(
 void RectangularDrawable::drawVertices(MTL::RenderCommandEncoder* cmd_encoder,
                                        application::WindowContext* context,
                                        Vec2 parent_offset) {
-  LOG_SEV(Trace) << "Drawing '" << GetName() << "'.";
-
   auto displaced_verts_ = verts_;
   // Displace vertices.
   for (auto& vert : displaced_verts_) {

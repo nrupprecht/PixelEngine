@@ -27,9 +27,10 @@ SingleChunkWorld::SingleChunkWorld(std::size_t chunk_width, std::size_t chunk_he
   world_texture_.Initialize(chunk_width, chunk_height, shader_program->GetDevice());
 
   auto drawable = std::make_unique<graphics::RectangularDrawable>(
-      shader_program, std::make_unique<graphics::TextureWrapper>(world_texture_.GetTexture()));
-  drawable->SetWidth(chunk_width);
-  drawable->SetHeight(chunk_height);
+      shader_program,
+      chunk_width,
+      chunk_height,
+      std::make_unique<graphics::TextureWrapper>(world_texture_.GetTexture()));
   drawable->SetName("WorldTexture");
 
   AddChild(std::move(drawable));
@@ -56,8 +57,6 @@ void SingleChunkWorld::_draw(MTL::RenderCommandEncoder* render_command_encoder,
 void SingleChunkWorld::_updatePhysics(float raw_dt) {
   auto dt = std::min(1.f / 30.f, raw_dt);
 
-  // auto begin_evolution_time = std::chrono::high_resolution_clock::now();
-
   // Reset was-moved flags.
   for (auto y = 0; y < chunk_height_; ++y) {
     for (auto x = 0; x < chunk_width_; ++x) {
@@ -80,7 +79,7 @@ void SingleChunkWorld::_updatePhysics(float raw_dt) {
       return;
     }
 
-    square.UpdateKinematics(dt, gravity_);
+    square.UpdateKinematics(dt, *this);
     if (auto bb = square.behavior->Update(dt, x, y, *this); !bb.IsEmpty()) {
       bounding_box.Update(bb);
     }
@@ -103,17 +102,7 @@ void SingleChunkWorld::_updatePhysics(float raw_dt) {
   // Update active region.
   active_region_ = bounding_box;
 
-  // TODO: Other updates, e.g. temperature, objects catching fire, reacting, etc.
-
-  // auto end_evoluation_time = std::chrono::high_resolution_clock::now();
-
-  // Get the time it took to evolve.
-  // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_evoluation_time -
-  // begin_evolution_time);
-  //
-  // auto evolution_time = static_cast<float>(duration.count()) / 1'000'000.f;
-  // std::cout << "dt = " << evolution_time << ", FPS = " << 1. / evolution_time << ", BB = " <<
-  // active_region_ << std::endl;
+  // TODO: Other updates, e.g. temperature, objects catching fire, reacting, etc.?
 }
 
 void SingleChunkWorld::_update(float dt) {
@@ -133,27 +122,29 @@ void SingleChunkWorld::_update(float dt) {
       auto y = static_cast<long long>(fy * chunk_height_);
 
       // Generate randomly in a circle
-      int radius = 5;
-      for (int i = -radius; i < radius; ++i) {
-        for (int j = -radius; j < radius; ++j) {
-          if (i * i + j * j < radius * radius && 0 <= x + i && x + i < GetWidth() && 0 <= y + j
-              && y + j < GetHeight())
-          {
+      int radius = 10;
+      float p    = 0.7;  // 0.7
+      for (int i = -radius; i <= radius; ++i) {
+        for (int j = -radius; j <= radius; ++j) {
+          if (i * i + j * j <= radius * radius) {
+            if (!IsValidSquare(x + i, y + j)) {
+              continue;
+            }
             if (GetSquare(x + i, y + j).is_occupied) {
               continue;
             }
-            if (randf() < 0.7) {
+            if (randf() < p) {
               auto c = randf();
 
               Square square;
 
               if (brush_type == 0) {
                 square            = Square(true, SAND_COLORS[static_cast<int>(4 * c)], &SAND, &falling);
-                square.velocity_y = -50;
+                square.velocity.y = -50;
               }
               else if (brush_type == 1) {
                 square            = Square(true, Color::FromFloats(0., 0., 1.), &WATER, &liquid);
-                square.velocity_y = -50;
+                square.velocity.y = -50;
               }
               else if (brush_type == 2) {
                 square = Square(true, Color(randi(30, 60), randi(30, 60), randi(30, 60)), &DIRT, &stationary);

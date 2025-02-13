@@ -20,7 +20,7 @@ public:
 
   [[nodiscard]] std::size_t GetWidth() const { return chunk_width_; }
   [[nodiscard]] std::size_t GetHeight() const { return chunk_height_; }
-  [[nodiscard]] float GetGravity() const { return gravity_; }
+  [[nodiscard]] float GetGravity() const override { return gravity_; }
 
   [[nodiscard]] const BoundingBox& GetActiveRegion() const { return active_region_; }
 
@@ -53,11 +53,11 @@ private:
 
   BoundingBox active_region_;
 
-  mutable pixelengine::TextureBitmap world_texture_;
-  std::shared_ptr<pixelengine::graphics::RectangularDrawable> main_drawable_;
-
   //! \brief Acceleration due to gravity, in squares per second squared.
   float gravity_ = -100.;
+
+  mutable pixelengine::TextureBitmap world_texture_;
+  std::shared_ptr<pixelengine::graphics::RectangularDrawable> main_drawable_;
 
   Square& getSquare(long long x, long long y) override {
     LL_ASSERT(x < chunk_width_ && y < chunk_height_, "out of bounds, x, y = " << x << ", " << y);

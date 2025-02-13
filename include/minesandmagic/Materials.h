@@ -13,6 +13,8 @@ inline constexpr pixelengine::world::FallingPhysics falling {};
 inline constexpr pixelengine::world::LiquidPhysics liquid {};
 inline constexpr pixelengine::world::Stationary stationary {};
 
+inline constexpr pixelengine::world::PowderPhysics test{};
+
 using pixelengine::world::SAND;
 using pixelengine::world::DIRT;
 using pixelengine::world::WATER;

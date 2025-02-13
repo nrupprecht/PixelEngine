@@ -23,9 +23,14 @@ struct VertexData {
 //! \brief A rectangular drawable object.
 class RectangularDrawable : public Drawable {
 public:
-  RectangularDrawable(ShaderProgram* shader_program, std::unique_ptr<TextureContainer> texture);
+  RectangularDrawable(ShaderProgram* shader_program,
+                      float width,
+                      float height,
+                      std::unique_ptr<TextureContainer> texture);
 
-  RectangularDrawable(ShaderProgram* shader_program, std::size_t texture_width, std::size_t texture_height);
+  RectangularDrawable(ShaderProgram* shader_program,
+                      std::size_t texture_width,
+                      std::size_t texture_height);
 
   [[nodiscard]] TextureContainer& GetTextureBitmap() const;
 

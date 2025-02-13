@@ -51,11 +51,13 @@ add_library(
 		src/pixelengine/utility/AutoBuffer.cpp
 		src/pixelengine/utility/PathGenerator.cpp
 		src/pixelengine/physics/PhysicsBody.cpp
+		src/pixelengine/world/World.cpp
 
 		# Really, belongs to a separate library
 		src/minesandmagic/MinesAndMagic.cpp
 		src/minesandmagic/Player.cpp
 		src/minesandmagic/SingleChunkWorld.cpp
+		src/minesandmagic/ChunkedWorld.cpp
 )
 
 add_library(PixelEngine::PixelEngine ALIAS PixelEngine_PixelEngine)

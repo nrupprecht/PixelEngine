@@ -83,25 +83,8 @@ void PhysicsBody::moveBody(world::World& world) {
   // Put the velocity into the remainder.
   remainder_ += velocity_;
 
-  PVec2 end_position = position_;
-  if (0 < remainder_.x) {
-    end_position.x += std::lroundf(std::floor(remainder_.x));
-    remainder_.x -= std::floor(remainder_.x);
-  }
-  else {
-    end_position.x += std::lroundf(std::ceil(remainder_.x));
-    remainder_.x -= std::ceil(remainder_.x);
-  }
-  // Y
-  if (0 < remainder_.y) {
-    end_position.y += std::lroundf(std::floor(remainder_.y));
-    remainder_.y -= std::floor(remainder_.y);
-  }
-  else {
-    end_position.y += std::lroundf(std::ceil(remainder_.y));
-    remainder_.y -= std::ceil(remainder_.y);
-  }
-
+  auto [end_position, new_remainder_] = AddWithRemainder(position_, remainder_);
+  remainder_ = new_remainder_;
 
   PathGenerator generator(position_, end_position);
   bool blocked_x = false, blocked_y = false;
@@ -145,7 +128,7 @@ void PhysicsBody::moveBody(world::World& world) {
       break;
     }
     auto&& square = world.GetSquare(left - 1, y);
-    if (square.is_occupied && square.material->IsSolid()) {
+    if (square.is_occupied && square.material->IsSolidOrPowder()) {
       new_state.blocked_left = true;
       break;
     }
@@ -158,7 +141,7 @@ void PhysicsBody::moveBody(world::World& world) {
       break;
     }
     auto&& square = world.GetSquare(right + 1, y);
-    if (square.is_occupied && square.material->IsSolid()) {
+    if (square.is_occupied && square.material->IsSolidOrPowder()) {
       new_state.blocked_right = true;
       break;
     }
@@ -171,7 +154,7 @@ void PhysicsBody::moveBody(world::World& world) {
       break;
     }
     auto&& square = world.GetSquare(x, top + 1);
-    if (square.is_occupied && square.material->IsSolid()) {
+    if (square.is_occupied && square.material->IsSolidOrPowder()) {
       new_state.blocked_up = true;
       break;
     }
@@ -184,7 +167,7 @@ void PhysicsBody::moveBody(world::World& world) {
       break;
     }
     auto&& square = world.GetSquare(x, bottom - 1);
-    if (square.is_occupied && square.material->IsSolid()) {
+    if (square.is_occupied && square.material->IsSolidOrPowder()) {
       new_state.blocked_down = true;
       break;
     }
@@ -199,7 +182,7 @@ void PhysicsBody::moveBody(world::World& world) {
       return true;
     }
     auto&& square = world.GetSquare(x, y);
-    return square.is_occupied && square.material->IsSolid();
+    return square.is_occupied && square.material->IsSolidOrPowder();
   };
 
   // Top left corner
@@ -223,7 +206,7 @@ bool PhysicsBody::moveX(bool right, world::World& world) {
       return false;
     }
     auto&& square = world.GetSquare(column, y);
-    if (square.is_occupied && square.material->IsSolid()) {
+    if (square.is_occupied && square.material->IsSolidOrPowder()) {
       return false;
     }
   }
@@ -241,7 +224,7 @@ bool PhysicsBody::moveY(bool up, world::World& world) {
       return false;
     }
     auto&& square = world.GetSquare(x, row);
-    if (square.is_occupied && square.material->IsSolid()) {
+    if (square.is_occupied && square.material->IsSolidOrPowder()) {
       return false;
     }
   }
@@ -258,7 +241,7 @@ bool PhysicsBody::isBlockedDown(world::World& world) const {
       return true;
     }
     auto&& square = world.GetSquare(x, row);
-    if (square.is_occupied && square.material->IsSolid()) {
+    if (square.is_occupied && square.material->IsSolidOrPowder()) {
       return true;
     }
   }
@@ -273,7 +256,7 @@ unsigned PhysicsBody::heightOfStep(bool right, world::World& world) const {
       return y - position_.y + 1;
     }
     auto&& square = world.GetSquare(column, y);
-    if (square.is_occupied && square.material->IsSolid()) {
+    if (square.is_occupied && square.material->IsSolidOrPowder()) {
       return y - position_.y + 1;
     }
   }

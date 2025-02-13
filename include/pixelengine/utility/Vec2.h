@@ -85,5 +85,29 @@ auto operator*(BaseVec2<T>& a, const BaseVec2<T>& b) {
   return a.x * b.x + a.y * b.y;
 }
 
+//! \brief Add two Vec2's and get the PVec2 and a remainder.
+inline std::pair<PVec2, Vec2> AddWithRemainder(const PVec2& pvec, const Vec2& vec) {
+  auto pvec_out = pvec;
+  auto remainder = vec;
+  if (0 < vec.x) {
+    pvec_out.x += std::lroundf(std::floor(vec.x));
+    remainder.x -= std::floor(vec.x);
+  }
+  else {
+    pvec_out.x += std::lroundf(std::ceil(vec.x));
+    remainder.x -= std::ceil(vec.x);
+  }
+  // Y
+  if (0 < vec.y) {
+    pvec_out.y += std::lroundf(std::floor(vec.y));
+    remainder.y -= std::floor(vec.y);
+  }
+  else {
+    pvec_out.y += std::lroundf(std::ceil(vec.y));
+    remainder.y -= std::ceil(vec.y);
+  }
+
+  return {pvec_out, remainder};
+}
 
 }  // namespace pixelengine
