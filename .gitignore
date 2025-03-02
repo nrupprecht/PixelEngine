@@ -1,3 +1,6 @@
 .DS_Store
 cmake-build-*
 .idea/*
+bazel-*
+MODULE.bazel.lock
+.vscode/*
