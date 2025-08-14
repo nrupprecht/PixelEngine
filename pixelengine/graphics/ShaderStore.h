@@ -4,20 +4,18 @@
 
 #pragma once
 
+#include <deque>
 #include <optional>
 #include <string_view>
 #include <unordered_map>
-#include <deque>
 
 #include "pixelengine/graphics/ShaderProgram.h"
 
 namespace pixelengine::app {
 class Game;
-}  // namespace app
+}  // namespace pixelengine::app
 
 namespace pixelengine::graphics {
-
-
 
 class ShaderStore {
   friend class ::pixelengine::app::Game;

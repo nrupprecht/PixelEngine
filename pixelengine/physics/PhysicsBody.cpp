@@ -41,12 +41,12 @@ void PhysicsBody::_interactWithWorld(world::World* world) {
   }
 }
 
-void PhysicsBody::_updatePhysics(float dt) {
-  Node::_updatePhysics(dt);
-  updateBodyPhysics(dt);
+void PhysicsBody::_updatePhysics(float dt, const world::World* world) {
+  Node::_updatePhysics(dt, world);
+  updateBodyPhysics(dt, world);
 }
 
-void PhysicsBody::updateBodyPhysics(float dt) {
+void PhysicsBody::updateBodyPhysics(float dt, [[maybe_unused]] const world::World* world) {
   // Update the position of the body based on the velocity and the time step.
 
   // TODO: Get gravity from somewhere.... like the world.

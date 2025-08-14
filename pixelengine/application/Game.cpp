@@ -7,9 +7,16 @@
 #include "pixelengine/graphics/ShaderStore.h"
 #include "pixelengine/input/Input.h"
 
+using game_clock_t = std::chrono::high_resolution_clock;
+
 namespace pixelengine::app {
 
-Game::Game(Dimensions window_dimensions) : window_dimensions_(window_dimensions) {}
+Game::Game(Dimensions window_dimensions)
+    : window_dimensions_(window_dimensions)
+    , scene_(std::make_unique<Scene>()) {
+  // Set the scene for the game.
+  scene_->SetName("GameScene");
+}
 
 Game::~Game() {
   // Clean up shader program store.
@@ -40,7 +47,7 @@ void Game::Finalize() {
 }
 
 void Game::Run() {
-  NS::AutoreleasePool* pAutoreleasePool = NS::AutoreleasePool::alloc()->init();
+  NS::AutoreleasePool* autoreleasePool = NS::AutoreleasePool::alloc()->init();
 
   NS::Application* application = NS::Application::sharedApplication();
   application->setDelegate(application_.get());
@@ -57,7 +64,7 @@ void Game::Run() {
     application->run();
   }
 
-  pAutoreleasePool->release();
+  autoreleasePool->release();
 }
 
 void Game::update(float delta) {
@@ -69,36 +76,25 @@ void Game::update(float delta) {
   // Update the input object.
   input::Input::Update(application_->GetFrame());
 
-  for (auto& node : nodes_) {
-    node->removeQueuedChildren();
-  }
+  scene_->removeQueuedChildren();
+  scene_->addQueuedChildren();
 
-  for (auto& node : nodes_) {
-    node->addQueuedChildren();
-  }
+  // Check all input signals.
+  input::Input::GetSignals().beginCheckSignals();
+  input::Input::GetSignals().checkSignals();
 
-  // Update the physics of entities in the world.
-  for (const auto& bodies : nodes_) {
-    bodies->updatePhysics(delta, nullptr /* No world */);
-  }
+  scene_->beginCheckSignals();
+  scene_->checkSignals();
 
-  // Call the update logic for all entities in the world.
-  for (const auto& entity : nodes_) {
-    entity->update(delta);
-  }
+  scene_->updatePhysics(delta, nullptr /* No world */);
+  scene_->update(delta);
 
   // Set Input object to be ready for the next update.
   input::Input::Checkpoint();
 }
 
 void Game::addNode(std::unique_ptr<Node> node) {
-  if (node) {
-    auto& ptr = nodes_.emplace_back(std::move(node));
-    LOG_SEV(Trace) << "Added node [" << ptr << "] to game.";
-  }
-  else {
-    LOG_SEV(Debug) << "Warning: Trying to add null node to Game.";
-  }
+  scene_->AddChild(std::move(node));
 }
 
 void Game::setDelegates() {
@@ -110,9 +106,8 @@ void Game::setDelegates() {
 
   application_->GetViewDelegate().SetRenderCallback(
       [this](MTL::RenderCommandEncoder* render_command_encoder) {
-        for (auto& node : nodes_) {
-          node->draw(render_command_encoder, {} /* no window context */, {} /* No parent offset. */);
-        }
+        scene_->draw(render_command_encoder, {}, {});
+        //                 no window context ^^  ^^ no parent offset.
       });
 
   graphics::ShaderStore::makeGlobalInstance(application_->GetDevice());
@@ -124,11 +119,11 @@ void Game::simulation(Game* game) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 
-  std::chrono::high_resolution_clock::time_point last_time = std::chrono::high_resolution_clock::now();
+  game_clock_t::time_point last_time = game_clock_t::now();
   while (game->is_running_) {
-    std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed             = t0 - last_time;
-    auto delta                                        = static_cast<float>(elapsed.count());
+    game_clock_t::time_point t0           = game_clock_t::now();
+    std::chrono::duration<double> elapsed = t0 - last_time;
+    auto delta                            = static_cast<float>(elapsed.count());
 
     game->update(delta);
     last_time = t0;

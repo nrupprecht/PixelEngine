@@ -4,14 +4,14 @@
 
 #include "pixelengine/input/Input.h"
 // Other files.
-#include "pixelengine/utility/Utility.h"
 #include "pixelengine/utility/Contracts.h"
+#include "pixelengine/utility/Utility.h"
 
 namespace pixelengine::input {
 
 namespace {
 
-std::optional<std::array<float, 2>> getApplicationCursorPosition(CGRect frame) {
+std::optional<Vec2> getApplicationCursorPosition(CGRect frame) {
   // Y measured from top left.
   auto cursor          = input::Input::GetCursorPosition();
   auto [width, height] = GetScreenResolution();
@@ -32,7 +32,7 @@ std::optional<std::array<float, 2>> getApplicationCursorPosition(CGRect frame) {
     auto x = static_cast<float>((cursor.x - origin.x) / size.width);
     auto y = static_cast<float>((cursor.y - origin.y) / size.height);
 
-    return std::array {x, y};
+    return Vec2 {x, y};
   }
   return {};
 }
@@ -41,41 +41,74 @@ std::optional<std::array<float, 2>> getApplicationCursorPosition(CGRect frame) {
 
 //! \brief Structure for keeping track of the mouse states.
 struct MouseStates {
-  bool left_mouse_down       = false;
-  bool left_mouse_just_down  = false;
-  bool right_mouse_down      = false;
-  bool right_mouse_just_down = false;
+  using mouse_pos_t = Vec2;
+
+  bool left_mouse_down          = false;
+  bool left_mouse_just_down     = false;
+  bool left_mouse_just_released = false;
+
+  bool right_mouse_down          = false;
+  bool right_mouse_just_down     = false;
+  bool right_mouse_just_released = false;
 
   bool left_mouse_down_last_checkpoint  = false;
   bool right_mouse_down_last_checkpoint = false;
 
   CGPoint cursor_position {};
 
-  std::optional<std::array<float, 2>> application_cursor_position;
+  std::optional<mouse_pos_t> last_application_cursor_position {};
+  std::optional<mouse_pos_t> application_cursor_position {};
+
+  //! \brief The position where the mouse was last pressed down.
+  std::optional<mouse_pos_t> left_mouse_down_position {};
+  std::optional<mouse_pos_t> right_mouse_down_position {};
 
   void Update(CGRect application_frame) {
-    CGEventRef event = CGEventCreate(nullptr);
-    cursor_position  = CGEventGetLocation(event);
-    application_cursor_position = getApplicationCursorPosition(application_frame);
+    CGEventRef event                 = CGEventCreate(nullptr);
+    cursor_position                  = CGEventGetLocation(event);
+    last_application_cursor_position = application_cursor_position;
+    application_cursor_position      = getApplicationCursorPosition(application_frame);
     CFRelease(event);
+
+    if (left_mouse_just_down) {
+      left_mouse_down_position = application_cursor_position;
+    }
+    if (!left_mouse_down && left_mouse_down_last_checkpoint) {
+      left_mouse_just_released = true;
+    }
+
+    if (right_mouse_just_down) {
+      right_mouse_down_position = application_cursor_position;
+    }
+    else if (!right_mouse_down && right_mouse_down_last_checkpoint) {
+      right_mouse_just_released = true;
+    }
   }
 
   void Checkpoint() {
     left_mouse_down_last_checkpoint = left_mouse_down;
-    // left_mouse_down                 = false;
-    left_mouse_just_down = false;
+    left_mouse_just_down            = false;
+    left_mouse_just_released        = false;
 
     right_mouse_down_last_checkpoint = right_mouse_down;
-    // right_mouse_down                 = false;
-    right_mouse_just_down = false;
+    right_mouse_just_down            = false;
+    right_mouse_just_released        = false;
+
+    if (!left_mouse_down) {
+      left_mouse_down_position = {};
+    }
+    if (!right_mouse_down) {
+      right_mouse_down_position = {};
+    }
   }
 };
 
 //! \brief Structure for keeping track of keyboard states.
 struct KeyStates {
   struct State {
-    bool is_pressed      = false;
-    bool is_just_pressed = false;
+    bool is_pressed       = false;
+    bool is_just_pressed  = false;
+    bool is_just_released = false;
 
     //! \brief Whether the key has been released since the last check point
     bool un_press_queued = false;
@@ -95,6 +128,7 @@ struct KeyStates {
     for (auto& state : states) {
       state.was_pressed_last_checkpoint = state.is_pressed;
       state.is_just_pressed             = false;
+      state.is_just_released            = false;
       state.is_pressed                  = state.is_pressed && !state.un_press_queued;
 
       // TODO: Handle shift, caps.
@@ -108,6 +142,8 @@ namespace {
 KeyStates _key_states {};
 
 MouseStates _mouse_states {};
+
+InputSignals _signals {};
 
 }  // namespace
 
@@ -480,7 +516,10 @@ namespace {
 }
 
 
-CGEventRef mouseCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, [[maybe_unused]] void* refcon) {
+CGEventRef mouseCallback([[maybe_unused]] CGEventTapProxy proxy,
+                         CGEventType type,
+                         CGEventRef event,
+                         [[maybe_unused]] void* refcon) {
   // Mouse events.
   if (type == kCGEventLeftMouseDown) {
     _mouse_states.left_mouse_down      = true;
@@ -502,7 +541,10 @@ CGEventRef mouseCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef eve
   return event;
 }
 
-CGEventRef keyCallback([[maybe_unused]] CGEventTapProxy proxy, CGEventType type, CGEventRef event, [[maybe_unused]] void* refcon) {
+CGEventRef keyCallback([[maybe_unused]] CGEventTapProxy proxy,
+                       CGEventType type,
+                       CGEventRef event,
+                       [[maybe_unused]] void* refcon) {
   // Good reference: https://github.com/caseyscarborough/keylogger
 
   // Filter out to only include key down events.
@@ -617,6 +659,41 @@ void setKeyEvents() {
 
 }  // namespace
 
+InputSignals::InputSignals() {
+  // Initialize signals.
+
+  signal_check_t<Vec2, Vec2> leftMouseDragCheck = [this]() {
+    if (_mouse_states.left_mouse_just_released && _mouse_states.application_cursor_position
+        && _mouse_states.left_mouse_down_position
+        && *_mouse_states.left_mouse_down_position != *_mouse_states.application_cursor_position)
+    {
+      leftMouseDrag.Emit(*_mouse_states.left_mouse_down_position, *_mouse_states.application_cursor_position);
+    }
+    return std::nullopt;
+  };
+  signals_.emplace_back(&leftMouseDrag, leftMouseDragCheck);
+
+  signal_check_t<Vec2, Vec2> rightMouseDragCheck = [this]() {
+    if (_mouse_states.right_mouse_just_released && _mouse_states.application_cursor_position
+        && _mouse_states.right_mouse_down_position
+        && *_mouse_states.right_mouse_down_position != *_mouse_states.application_cursor_position)
+    {
+      rightMouseDrag.Emit(*_mouse_states.right_mouse_down_position,
+                          *_mouse_states.application_cursor_position);
+    }
+    return std::nullopt;
+  };
+  signals_.emplace_back(&rightMouseDrag, rightMouseDragCheck);
+}
+
+void InputSignals::beginCheckSignals() {}
+
+void InputSignals::checkSignals() {
+  for (auto& signal : signals_) {
+    signal.CheckSignal();
+  }
+}
+
 void Input::Initialize() {
   setMouseEvents();
   setKeyEvents();
@@ -626,7 +703,7 @@ CGPoint Input::GetCursorPosition() {
   return _mouse_states.cursor_position;
 }
 
-std::optional<std::array<float, 2>> Input::GetApplicationCursorPosition() {
+std::optional<Vec2> Input::GetApplicationCursorPosition() {
   return _mouse_states.application_cursor_position;
 }
 
@@ -681,6 +758,10 @@ void Input::Update(CGRect application_frame) {
 void Input::Checkpoint() {
   _key_states.Checkpoint();
   _mouse_states.Checkpoint();
+}
+
+InputSignals& Input::GetSignals() {
+  return _signals;
 }
 
 

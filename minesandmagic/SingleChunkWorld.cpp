@@ -4,11 +4,10 @@
 
 #include "minesandmagic/SingleChunkWorld.h"
 // Other files.
+#include "minesandmagic/Materials.h"
 #include "pixelengine/graphics/ShaderStore.h"
 #include "pixelengine/input/Input.h"
 #include "pixelengine/utility/Contracts.h"
-
-#include "minesandmagic/Materials.h"
 
 using namespace pixelengine;
 
@@ -24,6 +23,10 @@ SingleChunkWorld::SingleChunkWorld(std::size_t chunk_width, std::size_t chunk_he
   auto shader_program = graphics::ShaderStore::GetInstance()->GetShaderProgram("TextureShader");
   PIXEL_ASSERT(shader_program, "could not get shader program");
 
+  // The world texture is a bitmap that we draw the "sand" (and other material) chunks to.
+  // Each square in the world is represented by a pixel in the texture.
+  // The texture is chunk_width_ pixels wide and chunk_height_ pixels tall.
+  // The size of the texture does not have to match the actual resolution / size of the window.
   world_texture_.Initialize(chunk_width, chunk_height, shader_program->GetDevice());
 
   auto drawable = std::make_unique<graphics::RectangularDrawable>(
@@ -54,7 +57,7 @@ void SingleChunkWorld::_draw(MTL::RenderCommandEncoder* render_command_encoder,
   world_texture_.Update();
 }
 
-void SingleChunkWorld::_updatePhysics(float raw_dt) {
+void SingleChunkWorld::_updatePhysics(float raw_dt, const world::World* world) {
   auto dt = std::min(1.f / 30.f, raw_dt);
 
   // Reset was-moved flags.
@@ -107,9 +110,11 @@ void SingleChunkWorld::_updatePhysics(float raw_dt) {
 
 void SingleChunkWorld::_update(float dt) {
   static unsigned brush_type = 0;
+  // TODO: Use input callbacks instead?
   if (input::Input::IsJustPressed('B')) {
     brush_type += 1;
     brush_type = brush_type % 3;
+    LOG_SEV(Debug) << "Changed brush type to " << brush_type;
   }
 
   // Update the world based on input.

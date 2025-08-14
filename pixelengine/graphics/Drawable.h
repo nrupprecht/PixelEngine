@@ -4,9 +4,9 @@
 #include <Metal/Metal.hpp>
 #include <MetalKit/MetalKit.hpp>
 
-#include "pixelengine/node/Node.h"
 #include "pixelengine/graphics/ShaderProgram.h"
 #include "pixelengine/graphics/TextureContainer.h"
+#include "pixelengine/node/Node.h"
 #include "pixelengine/utility/AutoBuffer.h"
 #include "pixelengine/utility/Utility.h"
 

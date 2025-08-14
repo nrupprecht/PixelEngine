@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <ostream>
 
 namespace pixelengine {
@@ -11,11 +12,13 @@ namespace pixelengine {
 //! \brief Two dimensional vector.
 template<typename T>
 struct BaseVec2 {
+  BaseVec2(T a, T b) : x(a), y(b) {}
+  BaseVec2(std::array<T, 2> arr) : x(arr[0]), y(arr[1]) {}
+  BaseVec2() = default;
+
   T x {}, y {};
 
-  bool operator==(const BaseVec2& other) const {
-    return x == other.x && y == other.y;
-  }
+  bool operator==(const BaseVec2& other) const { return x == other.x && y == other.y; }
 
   //! \brief Convert to a different type of vector.
   template<typename S>
@@ -80,14 +83,21 @@ BaseVec2<T>& operator-=(BaseVec2<T>& a, const BaseVec2<T>& b) {
   return a;
 }
 
+//! \brief Dot product of two Vec2's.
 template<typename T>
-auto operator*(BaseVec2<T>& a, const BaseVec2<T>& b) {
+auto operator*(const BaseVec2<T>& a, const BaseVec2<T>& b) {
   return a.x * b.x + a.y * b.y;
+}
+
+//! \brief Cross product of two Vec2's.
+template<typename T>
+T operator^(const BaseVec2<T>& a, const BaseVec2<T>& b) {
+  return a.x * b.y - a.y * b.x;
 }
 
 //! \brief Add two Vec2's and get the PVec2 and a remainder.
 inline std::pair<PVec2, Vec2> AddWithRemainder(const PVec2& pvec, const Vec2& vec) {
-  auto pvec_out = pvec;
+  auto pvec_out  = pvec;
   auto remainder = vec;
   if (0 < vec.x) {
     pvec_out.x += std::lroundf(std::floor(vec.x));
@@ -109,5 +119,15 @@ inline std::pair<PVec2, Vec2> AddWithRemainder(const PVec2& pvec, const Vec2& ve
 
   return {pvec_out, remainder};
 }
+
+inline float length(const Vec2& v) {
+  return std::sqrt(v.x * v.x + v.y * v.y);
+}
+
+inline Vec2 normalize(const Vec2& v) {
+  float len = length(v);
+  return {v.x / len, v.y / len};
+}
+
 
 }  // namespace pixelengine

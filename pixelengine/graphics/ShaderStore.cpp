@@ -15,7 +15,8 @@ ShaderStore* instance_ = nullptr;
 
 void createBasicShaders() {
   // Create the TextureShader, so it can be used by other things.
-  std::string shader = R"(
+  
+  const char* shader = R"(
       #include <metal_stdlib>
       using namespace metal;
 
@@ -44,6 +45,43 @@ void createBasicShaders() {
   )";
 
   instance_->CreateShaderProgram("TextureShader", shader, "vertexMain", "fragmentMain");
+
+  // Shader that colors the entire area a single color.
+
+  const char* color_shader = R"(
+      #include <metal_stdlib>
+      using namespace metal;
+
+      // Structure for a vertex position
+      struct VertexIn {
+          float2 position;
+      };
+
+      // Structure for passing from vertex to fragment
+      struct VertexOut {
+          float4 position [[position]];
+      };
+
+      // Uniform buffer for the color
+      struct ColorUniform {
+          float4 color; // RGBA
+      };
+
+      vertex VertexOut vertexMain(const device VertexIn* vertices [[buffer(0)]],
+                                    uint vid [[vertex_id]]) {
+          VertexOut out;
+          out.position = float4(vertices[vid].position, 0.0, 1.0);
+          return out;
+      }
+
+      fragment float4 fragmentMain(VertexOut in [[stage_in]],
+                                    constant ColorUniform& uColor [[buffer(1)]]) {
+          //return uColor.color;
+          return float4(1.0, 0.0, 0.0, 1.0); // Red color
+      }
+  )";
+
+  instance_->CreateShaderProgram("ColorShader", color_shader, "vertexMain", "fragmentMain");
 }
 
 }  // namespace

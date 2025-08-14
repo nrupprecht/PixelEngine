@@ -11,15 +11,6 @@
 
 namespace pixelengine::graphics {
 
-namespace shadertypes {
-
-struct VertexData {
-  simd::float3 position;
-  simd::float2 texcoord;
-};
-
-}  // namespace shadertypes
-
 //! \brief A rectangular drawable object.
 class RectangularDrawable : public Drawable {
 public:
@@ -28,9 +19,7 @@ public:
                       float height,
                       std::unique_ptr<TextureContainer> texture);
 
-  RectangularDrawable(ShaderProgram* shader_program,
-                      std::size_t texture_width,
-                      std::size_t texture_height);
+  RectangularDrawable(ShaderProgram* shader_program, std::size_t texture_width, std::size_t texture_height);
 
   [[nodiscard]] TextureContainer& GetTextureBitmap() const;
 
@@ -49,13 +38,13 @@ private:
                     application::WindowContext* context,
                     Vec2 parent_offset) override;
 
+  //! \brief Regenerate the vertex positions. Called when the width or height changes.
   void generateVertices(bool update = true);
-
-  utility::AutoBuffer index_buffer_;
 
   Vec2 position_;
   float width_ {}, height_ {};
 
+  utility::AutoBuffer index_buffer_;
   std::array<shadertypes::VertexData, 4> verts_ {};
 };
 

@@ -52,8 +52,10 @@ private:
 
   //! \brief Pointer to the metal data buffer.
   MTL::Buffer* data_{};
+
   //! \brief The number of elements of size `data_size_`.
   std::size_t size_{};
+  
   //! \brief The size of a single element in the buffer.
   std::size_t data_size_{};
 };

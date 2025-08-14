@@ -9,6 +9,7 @@
 
 #include "pixelengine/application/AppDelegate.h"
 #include "pixelengine/world/World.h"
+#include "pixelengine/node/Scene.h"
 #include "pixelengine/graphics/RectangularDrawable.h"
 
 namespace pixelengine::app {
@@ -71,8 +72,8 @@ private:
   volatile bool is_initialized_ = false;
   bool is_running_ = false;
 
-  //! \brief All the top level nodes in the game.
-  std::list<std::unique_ptr<Node>> nodes_;
+  //! \brief The game scene.
+  std::unique_ptr<Scene> scene_;
 };
 
 }  // namespace pixelengine::app

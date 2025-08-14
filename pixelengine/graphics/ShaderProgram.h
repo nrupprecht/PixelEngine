@@ -8,7 +8,19 @@
 
 #include <Metal/Metal.hpp>
 
+#include "pixelengine/utility/Utility.h"
+
 namespace pixelengine::graphics {
+
+namespace shadertypes {
+
+//! \brief A vertex data structure used in some shader programs.
+struct VertexData {
+  simd::float3 position;
+  simd::float2 texcoord;
+};
+
+}  // namespace shadertypes
 
 
 //! \brief Represents a shader program.

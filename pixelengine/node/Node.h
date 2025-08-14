@@ -6,14 +6,18 @@
 
 #include <list>
 
+#include <Lightning/Lightning.h>
 #include <Metal/Metal.hpp>
 #include <MetalKit/MetalKit.hpp>
 
+#include "pixelengine/utility/Signal.h"
 #include "pixelengine/utility/Vec2.h"
 #include "pixelengine/utility/WindowContext.h"
 
 
 namespace pixelengine {
+
+class Scene;
 
 namespace app {
 class Game;
@@ -29,9 +33,11 @@ class World;
 class Node {
   // Game is a friend so it can call the various update functions.
   friend class app::Game;
+  friend class Scene;
 
 public:
-  Node()          = default;
+  Node() = default;
+  Node(std::string_view name) : name_(name) { LOG_SEV(Trace) << "Node created: " << *this; }
   virtual ~Node() = default;
 
   //! \brief Set an identifying name for the node. Purely for debuging purposes.
@@ -42,10 +48,19 @@ public:
 
   //! \brief Add a child of the node. Adds as the child with the least precedence.
   void AddChild(std::unique_ptr<Node> child) {
+    if (!child) {
+      LOG_SEV(Debug) << "Warning: Trying to add null child to Node [" << *this << "].";
+      return;
+    }
+    if (child->parent_ == this) {
+      return;  // Already a child of this node.
+    }
+    // If the child currently has a parent, remove it from the parent's children.
     if (child->parent_) {
       child->parent_->QueueRemoveChild(child.get());
     }
     queued_children_.push_back(std::move(child));
+    LOG_SEV(Trace) << "Added child " << *queued_children_.back().get() << " to node " << *this << ".";
   }
 
   //! \brief Queue a node to be removed as a child of this node. If the node is not a child, does nothing.
@@ -58,7 +73,31 @@ public:
 
   Node& AsNode() { return *this; }
 
+  [[nodiscard]] bool IsQueuedForRemoval() const { return queued_for_deletion_; }
+
+  friend std::ostream& operator<<(std::ostream& os, const Node& node) {
+    os << "Node(" << node.name_ << ": " << &node << ")";
+    return os;
+  }
+
 private:
+  void beginCheckSignals() {
+    _beginCheckSignals();
+    for (auto& child : children_) {
+      child->beginCheckSignals();
+    }
+  }
+
+  //! \brief Check all signals and all children's signals (determines whether they should fire).
+  void checkSignals() {
+    for (auto& signal : signals_) {
+      signal.CheckSignal();
+    }
+    for (auto& child : children_) {
+      child->checkSignals();
+    }
+  }
+
   void addedBy(Node* parent) {
     parent_ = parent;
     _onAddedBy(parent);
@@ -100,16 +139,16 @@ private:
     }
   }
 
-  void prePhysics(float dt) {
-    _prePhysics(dt);
+  void prePhysics(float dt, const world::World* world) {
+    _prePhysics(dt, world);
     for (auto& child : children_) {
-      child->prePhysics(dt);
+      child->prePhysics(dt, world);
     }
   }
 
   void updatePhysics(float dt, world::World* world) {
     _interactWithWorld(world);
-    _updatePhysics(dt);
+    _updatePhysics(dt, world);
 
     // Potentially pass a different world to lower levels. This should done e.g. if this node is itself a
     // world.
@@ -146,10 +185,32 @@ private:
   }
 
 protected:
+  void addSignal(SignalEmitter signal) { signals_.emplace_back(std::move(signal)); }
+
+  template<typename... Args_t>
+  void addSignal(Signal<Args_t...>* signal, std::function<std::optional<std::tuple<Args_t...>>()> check) {
+    signals_.push_back(SignalEmitter(signal, std::move(check)));
+  }
+
+  template<typename Obj_t, typename... Args_t>
+  void addSignal(Signal<Args_t...>* signal,
+                 Obj_t* obj,
+                 std::optional<std::tuple<Args_t...>> (Obj_t::*check)()) {
+    using func_t = std::function<std::optional<std::tuple<Args_t...>>()>;
+    signals_.push_back(SignalEmitter(signal, static_cast<func_t>(std::bind_front(check, obj))));
+  }
+
+protected:
+  //! \brief Called right before any signal checks occur. Allow for common work to be done across all signal
+  //!        checks for the node.
+  virtual void _beginCheckSignals() {}
+
   virtual void _interactWithWorld([[maybe_unused]] world::World* world) {}
 
-  virtual void _prePhysics([[maybe_unused]] float dt) {}
-  virtual void _updatePhysics([[maybe_unused]] float dt) {}
+  virtual void _prePhysics([[maybe_unused]] float dt, [[maybe_unused]] const world::World* world) {}
+  virtual void _updatePhysics([[maybe_unused]] float dt, [[maybe_unused]] const world::World* world) {}
+
+  //! \brief Non physics (internal state) updates.
   virtual void _update([[maybe_unused]] float dt) {}
 
   virtual void _draw([[maybe_unused]] MTL::RenderCommandEncoder* render_command_encoder,
@@ -159,11 +220,13 @@ protected:
   //! \brief Called right after the node is added to the Tree, and before the parent has _childEntering
   //!        called.
   virtual void _onAddedBy([[maybe_unused]] Node* parent) {}
+
   //! \brief Called right after the child node enters the Tree.
   virtual void _childEntering([[maybe_unused]] Node* child) {}
 
   //! \brief Called right before the child node exits the Tree.
   virtual void _childLeaving([[maybe_unused]] Node* child) {}
+
   //! \brief Called right before the node is removed from the Tree, and after the parent has _childLeaving
   virtual void _onLeavingFrom([[maybe_unused]] Node* parent) {}
 
@@ -191,11 +254,16 @@ private:
 
   Node* parent_ {};
 
+  //! \brief Whether the node is queued for deletion.
   bool queued_for_deletion_ {false};
 
+  //! \brief Children to be added.
   std::list<std::unique_ptr<Node>> queued_children_;
 
+  //! \brief Current children.
   std::list<std::unique_ptr<Node>> children_;
+
+  std::list<SignalEmitter> signals_;
 };
 
 }  // namespace pixelengine

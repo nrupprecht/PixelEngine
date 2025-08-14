@@ -19,14 +19,12 @@ public:
     // Difference between last_time_ and now.
     last_elapsed_us_ = std::chrono::duration_cast<std::chrono::microseconds>(t0 - last_time_).count();
     // Convert to microseconds.
-    last_time_   = t0;
+    last_time_ = t0;
 
     ++num_marks_;
   }
 
-  [[nodiscard]] long long GetLastElapsedUs() const {
-    return last_elapsed_us_;
-  }
+  [[nodiscard]] long long GetLastElapsedUs() const { return last_elapsed_us_; }
 
   [[nodiscard]] double GetLastElapsedSeconds() const {
     return static_cast<double>(last_elapsed_us_) / 1'000'000.0;
@@ -36,7 +34,7 @@ private:
   //! \brief Timing information.
   std::chrono::high_resolution_clock::time_point last_time_ {};
 
-  long long last_elapsed_us_{};
+  long long last_elapsed_us_ {};
 
   //! \brief Number of times that `Mark()` has been called.
   std::size_t num_marks_ {};

@@ -11,8 +11,7 @@ using namespace pixelengine;
 using namespace pixelengine::world;
 
 
-int main(int argc, char* argv[]) {
-
+int main(MAYBE_UNUSED int argc, MAYBE_UNUSED char* argv[]) {
   lightning::Global::GetCore()->AddSink(lightning::NewSink<lightning::StdoutSink>());
 
   // Game window dimensions.

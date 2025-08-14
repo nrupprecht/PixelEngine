@@ -351,7 +351,7 @@ public:
 
     auto original_x = x, original_y = y;
     bool did_update        = false;
-    std::size_t iterations = 0;
+    [[maybe_unused]] std::size_t iterations = 0;
     for (; 1.f <= vy || (!world.GetSquare(x, y).is_free_falling && 1.f <= std::abs(vx)); ++iterations) {
       std::tie(x, y, is_blocked) = singleUpdate(x, y, vx, vy, dt, world);
       if (!is_blocked) {

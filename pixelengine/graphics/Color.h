@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <algorithm>
+#include <simd/simd.h>
 
 namespace pixelengine {
 
@@ -29,6 +30,16 @@ struct alignas(uint32_t) Color {
   uint8_t red = 0xFF, green = 0xFF, blue = 0xFF, alpha = 0xFF;
 
   uint32_t ToUInt32() { return *reinterpret_cast<uint32_t*>(&red); }
+
+  simd::float4 ToFloat4() const {
+    auto clip = [](uint8_t value) {
+      return std::min<uint8_t>(value, 255);
+    };
+    return simd::float4 {static_cast<float>(clip(red)) / 255.0f,
+                         static_cast<float>(clip(green)) / 255.0f,
+                         static_cast<float>(clip(blue)) / 255.0f,
+                         static_cast<float>(clip(alpha)) / 255.0f};
+  }
 };
 
 }  // namespace pixelengine

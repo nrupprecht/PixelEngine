@@ -5,6 +5,8 @@
 
 namespace pixelengine::physics {
 
+class InteractionSystem;
+
 using pixelengine::Vec2;
 
 struct BodyState {
@@ -45,6 +47,8 @@ struct BodyState {
 };
 
 class PhysicsBody : public Node {
+  friend class InteractionSystem;
+
 public:
   PhysicsBody(PVec2 position, unsigned width, unsigned height, Vec2 velocity = {});
 
@@ -66,13 +70,16 @@ protected:
   void applyForceX(float fx);
   void applyForceY(float fy);
 
+  virtual void _onAddedToInteractionSystem([[maybe_unused]] InteractionSystem* interaction_system) {}
+  virtual void _onRemovedFromInteractionSystem([[maybe_unused]] InteractionSystem* interaction_system) {}
+
 private:
   void _interactWithWorld(world::World* world) override;
-  void _updatePhysics(float dt) override;
+  void _updatePhysics(float dt, const world::World* world) override;
 
   [[nodiscard]] Vec2 _additionalOffset() const override { return position_.To<float>(); }
 
-  void updateBodyPhysics(float dt);
+  void updateBodyPhysics(float dt, const world::World* world);
   void moveBody(world::World& world);
 
   bool moveX(bool right, world::World& world);
@@ -96,7 +103,7 @@ private:
   //! \note assumes the body is an axis aligned box.
   unsigned width_ {}, height_ {};
 
-  bool can_step_{true};
+  bool can_step_ {true};
   unsigned stepping_height_ = 4;
 
   float mass_ = 1.;

@@ -26,13 +26,13 @@ public:
 private:
   void _update(float dt) override;
 
-  void _updatePhysics(float dt) override;
+  void _updatePhysics(float dt, const World* world) override;
 
   void _draw(MTL::RenderCommandEncoder* render_command_encoder,
              WindowContext* context,
              pixelengine::Vec2 parent_offset) override;
 
-  WindowContext* _chooseWindowContext(WindowContext* context) override {
+  WindowContext* _chooseWindowContext([[maybe_unused]] WindowContext* context) override {
     return &world_context_; // What if the incoming context is not null?
   }
 
@@ -59,12 +59,12 @@ private:
   std::shared_ptr<pixelengine::graphics::RectangularDrawable> main_drawable_;
 
   Square& getSquare(long long x, long long y) override {
-    LL_ASSERT(x < chunk_width_ && y < chunk_height_, "out of bounds, x, y = " << x << ", " << y);
+    LL_ASSERT(x < static_cast<long long>(chunk_width_) && y < static_cast<long long>(chunk_height_), "out of bounds, x, y = " << x << ", " << y);
     return squares_[y * chunk_width_ + x];
   }
 
   [[nodiscard]] const Square& getSquare(long long x, long long y) const override {
-    LL_ASSERT(0 <= x && x < chunk_width_ && 0 <= y && y < chunk_height_,
+    LL_ASSERT(0 <= x && x < static_cast<long long>(chunk_width_) && 0 <= y && y < static_cast<long long>(chunk_height_),
               "out of bounds, x, y = " << x << ", " << y);
     return squares_[y * chunk_width_ + x];
   }

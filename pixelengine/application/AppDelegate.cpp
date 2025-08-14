@@ -116,7 +116,7 @@ void GameAppDelegate::applicationDidFinishLaunching(NS::Notification* pNotificat
   }
 }
 
-bool GameAppDelegate::applicationShouldTerminateAfterLastWindowClosed(NS::Application* pSender) {
+bool GameAppDelegate::applicationShouldTerminateAfterLastWindowClosed([[maybe_unused]] NS::Application* pSender) {
   return true;
 }
 

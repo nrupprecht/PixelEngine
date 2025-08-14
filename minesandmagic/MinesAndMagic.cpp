@@ -1,12 +1,12 @@
 #include "minesandmagic/MinesAndMagic.h"
 // Other files.
-#include "pixelengine/graphics/ShaderStore.h"
-#include "pixelengine/input/Input.h"
-#include "pixelengine/utility/Contracts.h"
-
 #include "minesandmagic/Materials.h"
 #include "minesandmagic/Player.h"
 #include "minesandmagic/SingleChunkWorld.h"
+#include "pixelengine/graphics/ShaderStore.h"
+#include "pixelengine/input/Input.h"
+#include "pixelengine/storage/LoadImage.h"
+#include "pixelengine/utility/Contracts.h"
 
 
 using namespace pixelengine;
@@ -19,11 +19,11 @@ void MinesAndMagic::setup() {
   auto world = std::make_unique<SingleChunkWorld>(texture_width_, texture_height_);
   world->SetName("World");
 
+  // Setup the materials in the world.
   for (auto j = 0u; j < world->GetHeight() / 2; ++j) {
     for (auto i = 0u; i < world->GetWidth(); ++i) {
       auto r = randf();
       if (r < 0.8) {
-        // if (i < world.GetWidth() / 2) {
         auto c = randf();
         Square sand_square(true, SAND_COLORS[static_cast<int>(4 * c)], &SAND, &falling);
         world->SetSquare(i, j, sand_square);
@@ -34,18 +34,26 @@ void MinesAndMagic::setup() {
     }
   }
 
-  auto player = std::make_unique<Player>(PVec2 {.x = 50, .y = 180}, 8, 16);
+  auto player = std::make_unique<Player>(PVec2 {50, 180}, 8, 16);
   player->SetName("Player");
 
-
   auto program = graphics::ShaderStore::GetInstance()->GetShaderProgram("TextureShader");
+  PIXEL_ASSERT(program, "could not get shader program");
 
-  auto texture = std::make_unique<graphics::TextureBitmapOwning>(12, 16, program->GetDevice());
-  auto& bitmap = texture->GetTextureBitmap();
-  bitmap.SetAllPixels(Color(255, 0, 0, 255));
-  auto sprite = std::make_unique<graphics::RectangularDrawable>(program, 12, 16, std::move(texture));
+  // auto texture = std::make_unique<graphics::TextureBitmapOwning>(12, 16, program->GetDevice());
+  // auto& bitmap = texture->GetTextureBitmap();
+  // bitmap.SetAllPixels(Color(0, 255, 0, 255));
 
-  // auto sprite = graphics::LoadBMP("/Users/nathaniel/Documents/Nathaniel/Programs/C++/PixelEngine/assets/Little-Sprite.bmp");
+  const char* map = "/Users/nrupprecht/Desktop/game/A_top-down,_2D_digital_illustration_depicts_a_fict.png";
+  const char* little_sprite = "/Users/nrupprecht/Desktop/game/Little-Sprite.bmp";
+
+  auto texture = pixelengine::storage::LoadTextureFromImage(program->GetDevice(), map);
+  // auto texture = pixelengine::storage::LoadTextureFromImage(program->GetDevice(), little_sprite);
+
+
+  // auto sprite = std::make_unique<graphics::RectangularDrawable>(program, 12, 16, std::move(texture));
+  auto sprite = std::make_unique<graphics::RectangularDrawable>(program, 24, 24, std::move(texture));
+
   PIXEL_ASSERT(sprite, "could not load player sprite");
   sprite->SetName("PlayerSprite");
 
@@ -54,6 +62,7 @@ void MinesAndMagic::setup() {
 
   world->AddChild(std::move(player));
 
+  // Add the world as a child of the game.
   addNode(std::move(world));
 }
 

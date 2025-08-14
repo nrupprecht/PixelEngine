@@ -44,6 +44,7 @@ public:
   void Update();
 
   void Refresh();
+
 private:
   void initialize(MTL::Device* device);
 

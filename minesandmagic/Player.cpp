@@ -15,11 +15,11 @@ void Player::_update(float dt) {
 
   bool moving_x = false;
   if (Input::IsPressed('D')) {
-    applyForceX(+10.);
+    applyForceX(+5.);
     moving_x = true;
   }
   if (Input::IsPressed('A')) {
-    applyForceX(-10.);
+    applyForceX(-5.);
     moving_x = true;
   }
 

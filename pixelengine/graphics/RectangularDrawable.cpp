@@ -3,6 +3,7 @@
 //
 
 #include "pixelengine/graphics/RectangularDrawable.h"
+
 #include "pixelengine/utility/Contracts.h"
 
 namespace pixelengine::graphics {
@@ -28,7 +29,6 @@ RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
   // Set index buffer data.
   index_buffer_ = utility::AutoBuffer::New<uint16_t>(device, indices, 6);
 }
-
 
 RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
                                          std::size_t texture_width,
@@ -95,11 +95,15 @@ void RectangularDrawable::drawVertices(MTL::RenderCommandEncoder* cmd_encoder,
   // TODO: Only update when necessary.
   buffers_.at(0).CopyInto<shadertypes::VertexData>(displaced_verts_.data());
 
-  cmd_encoder->drawIndexedPrimitives(
-      MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexTypeUInt16, index_buffer_.Data(), 0);
+  cmd_encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle,
+                                     index_buffer_.Size(),
+                                     MTL::IndexTypeUInt16,
+                                     index_buffer_.Data(),
+                                     0);
 }
 
 void RectangularDrawable::generateVertices(bool update) {
+  // texcoord is the texture coordinates.
   verts_[0] = {.position = simd::float3 {0.f, +height_, 0.0f}, .texcoord = {0.f, 0.f}};
   verts_[1] = {.position = simd::float3 {0.f, 0.f, 0.0f}, .texcoord = {0.f, 1.f}};
   verts_[2] = {.position = simd::float3 {+width_, 0.f, 0.0f}, .texcoord = {1.f, 1.f}};

@@ -2,8 +2,8 @@ load("//:tools.bzl", "default_opts")
 
 cc_library(
     name="utility",
-    hdrs=glob(["*.h"]),
-    srcs=glob(["*.cpp"]),
+    hdrs=glob(["**/*.h"]),
+    srcs=glob(["**/*.cpp"]),
     deps=[
         "@lightning//:lightning",
         "//metallib"

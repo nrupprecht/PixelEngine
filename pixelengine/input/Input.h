@@ -5,9 +5,32 @@
 #pragma once
 
 #include <ApplicationServices/ApplicationServices.h>
+#include "pixelengine/utility/Vec2.h"
+#include "pixelengine/utility/Signal.h"
 #include <string_view>
+#include <list>
+
+namespace pixelengine::app {
+  class Game; 
+}
 
 namespace pixelengine::input {
+
+class InputSignals {
+public:
+  InputSignals();
+
+  Signal<Vec2, Vec2> leftMouseDrag;
+  Signal<Vec2, Vec2> rightMouseDrag;
+
+private:
+  friend class pixelengine::app::Game;
+
+  void beginCheckSignals();
+  void checkSignals();
+
+  std::list<SignalEmitter> signals_;
+};
 
 //! \brief Class for getting input.
 class Input {
@@ -17,7 +40,7 @@ public:
   static void Initialize();
 
   [[nodiscard]] static CGPoint GetCursorPosition();
-  [[nodiscard]] static std::optional<std::array<float, 2>> GetApplicationCursorPosition();
+  [[nodiscard]] static std::optional<Vec2> GetApplicationCursorPosition();
 
   static bool IsLeftMousePressed();
   static bool IsRightMousePressed();
@@ -35,6 +58,8 @@ public:
 
   static void Update(CGRect application_frame);
   static void Checkpoint();
+
+  static InputSignals& GetSignals();
 };
 
 

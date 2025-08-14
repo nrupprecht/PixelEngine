@@ -5,6 +5,6 @@ cc_library(
     hdrs=glob(["**/*.h"]),
     srcs=glob(["**/*.cpp"]),
     visibility=["//visibility:public"],
-    deps=["//pixelengine/application", "//pixelengine/physics"],
+    deps=["//pixelengine/application", "//pixelengine/physics", "//pixelengine/storage"],
     copts = default_opts(),
 )
