@@ -7,8 +7,9 @@
 #include <cstdlib>  // For rand(), RAND_MAX
 
 #include <Lightning/Lightning.h>
-#include "pixelengine/utility/Vec2.h"
 #include <simd/simd.h>
+
+#include "pixelengine/utility/Vec2.h"
 
 namespace pixelengine {
 
@@ -34,14 +35,6 @@ namespace math {
 constexpr simd::float3 add(const simd::float3& a, const simd::float3& b) {
   return {a.x + b.x, a.y + b.y, a.z + b.z};
 }
-
-// constexpr simd_float4x4 makeIdentity() {
-//   using simd::float4;
-//   return (simd_float4x4) {(float4) {1.f, 0.f, 0.f, 0.f},
-//                           (float4) {0.f, 1.f, 0.f, 0.f},
-//                           (float4) {0.f, 0.f, 1.f, 0.f},
-//                           (float4) {0.f, 0.f, 0.f, 1.f}};
-// }
 
 simd::float4x4 makePerspective(float fovRadians, float aspect, float znear, float zfar);
 simd::float4x4 makeXRotate(float angleRadians);

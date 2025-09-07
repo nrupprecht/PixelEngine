@@ -6,6 +6,6 @@
 
 namespace pixelengine::utility {
 
-OutlineMesh GenerateOutlineMesh(std::span<const Vec2> points, float numPixels, bool closed = true);
+OutlineMesh GenerateConvexMesh(std::span<const Vec2> points);
 
 }  // namespace pixelengine::utility

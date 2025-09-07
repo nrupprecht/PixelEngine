@@ -13,16 +13,21 @@ namespace pixelengine {
 // Forward declaration of Node class.
 class Node;
 
+template<typename... Args_t>
+using signal_emitter_t = std::optional<std::tuple<Args_t...>>;
+
 //! \brief Function type for checking whether signals should be emitted, and what values they should pass to
 //!        their listeners.
 template<typename... Args_t>
-using signal_check_t = std::function<std::optional<std::tuple<Args_t...>>()>;
+using signal_check_t = std::function<signal_emitter_t<Args_t...>()>;
 
 
 //! \brief Signal represents events that other nodes (or things) can listen to.
 template<typename... Args_t>
 class Signal {
 public:
+  friend class SignalEmitter;
+
   using Callback = std::function<void(Args_t...)>;
 
   void Connect(Node* node, Callback callback) {
@@ -30,11 +35,11 @@ public:
     listeners_.emplace_back(node, std::move(callback));
   }
 
-  //! \brief Emit the signal to all listeners.
-  void Emit(Args_t... args) const {
-    for (const auto& [node, callback] : listeners_) {
-      callback(args...);
-    }
+  template<typename node_t>
+  requires (std::is_base_of_v<Node, node_t>)
+  void Connect(node_t* node, void (node_t::*callback)(Args_t...)) {
+    PIXEL_ASSERT(node, "Cannot connect signal to null node.");
+    listeners_.emplace_back(node, Callback(std::bind_front(callback, node)));
   }
 
   void Disconnect(Node* node) {
@@ -47,6 +52,13 @@ public:
   bool Empty() const { return listeners_.empty(); }
 
 private:
+  //! \brief Emit the signal to all listeners.
+  void emit(Args_t... args) const {
+    for (const auto& [node, callback] : listeners_) {
+      callback(args...);
+    }
+  }
+
   std::vector<std::pair<Node*, Callback>> listeners_;
 };
 
@@ -86,7 +98,7 @@ public:
       return;
     }
     if (auto result = check_signal_()) {
-      std::apply([this](Args_t... args) { signal_->Emit(args...); }, *result);
+      std::apply([this](Args_t... args) { signal_->emit(args...); }, *result);
     }
   }
 

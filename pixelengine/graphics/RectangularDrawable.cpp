@@ -31,17 +31,23 @@ RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
 }
 
 RectangularDrawable::RectangularDrawable(ShaderProgram* shader_program,
+                                         float width,
+                                         float height,
                                          std::size_t texture_width,
                                          std::size_t texture_height)
     : RectangularDrawable(
           shader_program,
-          static_cast<float>(texture_width),
-          static_cast<float>(texture_height),
+          width,
+          height,
           std::make_unique<TextureBitmapOwning>(texture_width, texture_height, shader_program->GetDevice())) {
 }
 
 TextureContainer& RectangularDrawable::GetTextureBitmap() const {
   return *textures_.at(0);
+}
+
+void RectangularDrawable::SetPosition(Vec2 position) {
+  SetPosition(position.x, position.y);
 }
 
 void RectangularDrawable::SetPosition(float x, float y) {

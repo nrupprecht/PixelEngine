@@ -35,17 +35,32 @@ private:
 //! \brief Class for getting input.
 class Input {
 public:
+  struct MouseDrag {
+    std::optional<Vec2> dragStart;
+    std::optional<Vec2> dragEnd;
+  };
+
   Input() = delete;
 
   static void Initialize();
 
-  [[nodiscard]] static CGPoint GetCursorPosition();
+  [[nodiscard]] static Vec2 GetCursorPosition();
   [[nodiscard]] static std::optional<Vec2> GetApplicationCursorPosition();
 
   static bool IsLeftMousePressed();
   static bool IsRightMousePressed();
+
   static bool IsLeftMouseJustPressed();
   static bool IsRightMouseJustPressed();
+
+  static bool IsLeftMouseJustDragged();
+  static bool IsRightMouseJustDragged();
+
+  static bool IsLeftMouseJustReleased();
+  static bool IsRightMouseJustReleased();
+
+  //! \brief Get the current mouse start and current positions (which may be null, e.g. if a drag is not occurring).
+  static MouseDrag GetMouseDrag(bool left_mouse);
 
   static bool IsPressed(int key_code);
   static bool IsJustPressed(int key_code);

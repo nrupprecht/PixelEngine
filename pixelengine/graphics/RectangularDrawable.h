@@ -19,10 +19,15 @@ public:
                       float height,
                       std::unique_ptr<TextureContainer> texture);
 
-  RectangularDrawable(ShaderProgram* shader_program, std::size_t texture_width, std::size_t texture_height);
+  RectangularDrawable(ShaderProgram* shader_program,
+                      float width,
+                      float height,
+                      std::size_t texture_width,
+                      std::size_t texture_height);
 
   [[nodiscard]] TextureContainer& GetTextureBitmap() const;
 
+  void SetPosition(Vec2 position);
   void SetPosition(float x, float y);
 
   [[nodiscard]] std::array<float, 2> GetPosition() const;

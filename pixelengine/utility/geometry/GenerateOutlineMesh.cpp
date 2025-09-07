@@ -43,7 +43,6 @@ OutlineMesh GenerateOutlineMesh(std::span<const Vec2> points, float num_pixels, 
     else {
       // Mitre join for internal or closed path points
       Vec2 bisector   = normalize(n_prev + n_next);
-      float cross_val = dir_prev ^ dir_next;
       float mitre_len = half_width / std::max(0.1f, bisector * n_prev);
 
       left[i]  = curr + bisector * mitre_len;

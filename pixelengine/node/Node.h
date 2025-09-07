@@ -11,7 +11,7 @@
 #include <MetalKit/MetalKit.hpp>
 
 #include "pixelengine/utility/Signal.h"
-#include "pixelengine/utility/Vec2.h"
+#include "pixelengine/utility/Mat2.h"
 #include "pixelengine/utility/WindowContext.h"
 
 
@@ -68,8 +68,11 @@ public:
     auto it = std::ranges::find_if(children_, [child](const auto& c) { return c.get() == child; });
     if (it != children_.end()) {
       (*it)->queued_for_deletion_ = true;
+      LOG_SEV(Trace) << "Queued child " << *child << " for deletion from node " << *this << ".";
     }
   }
+
+  [[nodiscard]] std::size_t GetNumChildren() const { return children_.size(); }
 
   Node& AsNode() { return *this; }
 
@@ -104,10 +107,15 @@ private:
   }
 
   void removeQueuedChildren() {
+    for (auto& child : children_) {
+      child->removeQueuedChildren();
+    }
+
     children_.remove_if([this](const auto& child) {
       if (child->queued_for_deletion_) {
         _childLeaving(child.get());
         child->_onLeavingFrom(this);
+        LOG_SEV(Trace) << "Removed child " << *child << " from node " << *this << ".";
       }
       return child->queued_for_deletion_;
     });
@@ -187,9 +195,10 @@ private:
 protected:
   void addSignal(SignalEmitter signal) { signals_.emplace_back(std::move(signal)); }
 
-  template<typename... Args_t>
-  void addSignal(Signal<Args_t...>* signal, std::function<std::optional<std::tuple<Args_t...>>()> check) {
-    signals_.push_back(SignalEmitter(signal, std::move(check)));
+  template<typename... Args_t, typename Func_t>
+  void addSignal(Signal<Args_t...>* signal, Func_t check) {
+    signals_.push_back(
+        SignalEmitter(signal, std::function<std::optional<std::tuple<Args_t...>>()>(std::move(check))));
   }
 
   template<typename Obj_t, typename... Args_t>
@@ -264,6 +273,9 @@ private:
   std::list<std::unique_ptr<Node>> children_;
 
   std::list<SignalEmitter> signals_;
+
+  Vec2 position_;
+  [[maybe_unused]]math::Mat2 transformation_;
 };
 
 }  // namespace pixelengine

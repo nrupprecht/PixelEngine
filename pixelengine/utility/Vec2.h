@@ -129,5 +129,10 @@ inline Vec2 normalize(const Vec2& v) {
   return {v.x / len, v.y / len};
 }
 
+inline bool WithinRectangle(Vec2 rA, Vec2 rB, Vec2 point) {
+  if (rB.x < rA.x) std::swap(rA.x, rB.x);
+  if (rB.y < rA.y) std::swap(rA.y, rB.y);
+  return rA.x <= point.x && point.x <= rB.x && rA.y <= point.y && point.y <= rB.y;
+}
 
 }  // namespace pixelengine

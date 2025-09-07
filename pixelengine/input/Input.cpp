@@ -46,10 +46,12 @@ struct MouseStates {
   bool left_mouse_down          = false;
   bool left_mouse_just_down     = false;
   bool left_mouse_just_released = false;
+  bool left_mouse_just_dragged  = false;
 
   bool right_mouse_down          = false;
   bool right_mouse_just_down     = false;
   bool right_mouse_just_released = false;
+  bool right_mouse_just_dragged  = false;
 
   bool left_mouse_down_last_checkpoint  = false;
   bool right_mouse_down_last_checkpoint = false;
@@ -83,16 +85,27 @@ struct MouseStates {
     else if (!right_mouse_down && right_mouse_down_last_checkpoint) {
       right_mouse_just_released = true;
     }
+
+    if (left_mouse_just_released) {
+      left_mouse_just_dragged = left_mouse_just_released && application_cursor_position
+          && left_mouse_down_position && *left_mouse_down_position != *application_cursor_position;
+    }
+    if (right_mouse_just_released) {
+      right_mouse_just_dragged = right_mouse_just_released && application_cursor_position
+          && right_mouse_down_position && *right_mouse_down_position != *application_cursor_position;
+    }
   }
 
   void Checkpoint() {
     left_mouse_down_last_checkpoint = left_mouse_down;
     left_mouse_just_down            = false;
     left_mouse_just_released        = false;
+    left_mouse_just_dragged         = false;
 
     right_mouse_down_last_checkpoint = right_mouse_down;
     right_mouse_just_down            = false;
     right_mouse_just_released        = false;
+    right_mouse_just_dragged         = false;
 
     if (!left_mouse_down) {
       left_mouse_down_position = {};
@@ -662,24 +675,19 @@ void setKeyEvents() {
 InputSignals::InputSignals() {
   // Initialize signals.
 
-  signal_check_t<Vec2, Vec2> leftMouseDragCheck = [this]() {
-    if (_mouse_states.left_mouse_just_released && _mouse_states.application_cursor_position
-        && _mouse_states.left_mouse_down_position
-        && *_mouse_states.left_mouse_down_position != *_mouse_states.application_cursor_position)
-    {
-      leftMouseDrag.Emit(*_mouse_states.left_mouse_down_position, *_mouse_states.application_cursor_position);
+  signal_check_t<Vec2, Vec2> leftMouseDragCheck = []() -> signal_emitter_t<Vec2, Vec2> {
+    if (_mouse_states.left_mouse_just_dragged) {
+      return std::make_tuple(*_mouse_states.left_mouse_down_position,
+                             *_mouse_states.application_cursor_position);
     }
     return std::nullopt;
   };
   signals_.emplace_back(&leftMouseDrag, leftMouseDragCheck);
 
-  signal_check_t<Vec2, Vec2> rightMouseDragCheck = [this]() {
-    if (_mouse_states.right_mouse_just_released && _mouse_states.application_cursor_position
-        && _mouse_states.right_mouse_down_position
-        && *_mouse_states.right_mouse_down_position != *_mouse_states.application_cursor_position)
-    {
-      rightMouseDrag.Emit(*_mouse_states.right_mouse_down_position,
-                          *_mouse_states.application_cursor_position);
+  signal_check_t<Vec2, Vec2> rightMouseDragCheck = []() -> signal_emitter_t<Vec2, Vec2> {
+    if (_mouse_states.right_mouse_just_dragged) {
+      return std::make_tuple(*_mouse_states.right_mouse_down_position,
+                             *_mouse_states.application_cursor_position);
     }
     return std::nullopt;
   };
@@ -699,8 +707,8 @@ void Input::Initialize() {
   setKeyEvents();
 }
 
-CGPoint Input::GetCursorPosition() {
-  return _mouse_states.cursor_position;
+Vec2 Input::GetCursorPosition() {
+  return Vec2(_mouse_states.cursor_position.x, _mouse_states.cursor_position.y);
 }
 
 std::optional<Vec2> Input::GetApplicationCursorPosition() {
@@ -721,6 +729,27 @@ bool Input::IsLeftMouseJustPressed() {
 
 bool Input::IsRightMouseJustPressed() {
   return _mouse_states.right_mouse_just_down;
+}
+
+bool Input::IsLeftMouseJustDragged() {
+  return _mouse_states.left_mouse_just_dragged;
+}
+
+bool Input::IsRightMouseJustDragged() {
+  return _mouse_states.right_mouse_just_dragged;
+}
+
+bool Input::IsLeftMouseJustReleased() {
+  return _mouse_states.left_mouse_just_released;
+}
+
+bool Input::IsRightMouseJustReleased() {
+  return _mouse_states.right_mouse_just_released;
+}
+
+Input::MouseDrag Input::GetMouseDrag(bool left_mouse) {
+  return {left_mouse ? _mouse_states.left_mouse_down_position : _mouse_states.right_mouse_down_position,
+          _mouse_states.application_cursor_position};
 }
 
 bool Input::IsPressed(int key_code) {

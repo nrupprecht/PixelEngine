@@ -12,11 +12,38 @@ public:
     addSignal(&mouseEntered, this, &Area::checkMouseEntered);
     addSignal(&mouseExited, this, &Area::checkMouseExited);
     addSignal(&mouseInside, this, &Area::checkMouseInside);
+
+    addSignal(&mouseLeftClicked, [this]() -> signal_emitter_t<Area*> {
+      if (input::Input::IsLeftMouseJustPressed() && cursor_pos_ && pointWithinArea(*cursor_pos_)) {
+        return std::make_tuple(this);
+      }
+      return std::nullopt;
+    });
+
+    addSignal(&mouseRightClicked, [this]() -> signal_emitter_t<Area*> {
+      if (input::Input::IsRightMouseJustPressed() && cursor_pos_ && pointWithinArea(*cursor_pos_)) {
+        return std::make_tuple(this);
+      }
+      return std::nullopt;
+    });
+
+    addSignal(&insideLeftMouseDrag, this, &Area::checkInsideLeftMouseDrag);
+    addSignal(&insideRightMouseDrag, this, &Area::checkInsideRightMouseDrag);
   }
 
-  Signal<> mouseEntered;
-  Signal<> mouseExited;
-  Signal<> mouseInside;
+  // ==========================================================
+  // Signals
+  // ==========================================================
+
+  Signal<Area*> mouseEntered;
+  Signal<Area*> mouseExited;
+  Signal<Area*> mouseInside;
+
+  Signal<Area*> mouseLeftClicked;
+  Signal<Area*> mouseRightClicked;
+
+  Signal<Area*> insideLeftMouseDrag;
+  Signal<Area*> insideRightMouseDrag;
 
 protected:
   void _beginCheckSignals() override {
@@ -28,28 +55,32 @@ protected:
 
   virtual bool pointWithinArea(const Vec2& point) const = 0;
 
-  std::optional<std::tuple<>> checkMouseEntered() {
+  signal_emitter_t<Area*> checkMouseEntered() {
     const bool entered = mouse_inside_ && !last_mouse_inside_;
     if (entered) {
-      return std::make_tuple();
+      return std::make_tuple(this);
     }
     return std::nullopt;
   }
 
-  std::optional<std::tuple<>> checkMouseExited() {
+  signal_emitter_t<Area*> checkMouseExited() {
     const bool exited = !mouse_inside_ && last_mouse_inside_;
     if (exited) {
-      return std::make_tuple();
+      return std::make_tuple(this);
     }
     return std::nullopt;
   }
 
-  std::optional<std::tuple<>> checkMouseInside() {
+  signal_emitter_t<Area*> checkMouseInside() {
     if (mouse_inside_) {
-      return std::make_tuple();
+      return std::make_tuple(this);
     }
     return std::nullopt;
   }
+
+  virtual signal_emitter_t<Area*> checkInsideLeftMouseDrag() { return std::nullopt; }
+
+  virtual signal_emitter_t<Area*> checkInsideRightMouseDrag() { return std::nullopt; }
 
   std::optional<Vec2> cursor_pos_ {};
   bool last_mouse_inside_ = false;
