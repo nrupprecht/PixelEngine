@@ -25,14 +25,10 @@ protected:
   //! \brief Set the arguments for the shader in the cmd encoder.
   void setArguments(MTL::RenderCommandEncoder* cmd_encoder);
 
-  void _draw(MTL::RenderCommandEncoder* cmd_encoder,
-             application::WindowContext* context,
-             Vec2 parent_offset) override;
+  void _draw(MTL::RenderCommandEncoder* cmd_encoder) override;
 
   //! \brief Draw the object.
-  virtual void drawVertices(MTL::RenderCommandEncoder* cmd_encoder,
-                            application::WindowContext* context,
-                            Vec2 parent_offset) = 0;
+  virtual void drawVertices(MTL::RenderCommandEncoder* cmd_encoder) = 0;
 
   std::vector<utility::AutoBuffer> buffers_;
 

@@ -27,11 +27,6 @@ public:
 
   [[nodiscard]] TextureContainer& GetTextureBitmap() const;
 
-  void SetPosition(Vec2 position);
-  void SetPosition(float x, float y);
-
-  [[nodiscard]] std::array<float, 2> GetPosition() const;
-
   void SetWidth(float width);
   void SetHeight(float height);
 
@@ -39,9 +34,9 @@ public:
   [[nodiscard]] std::unique_ptr<TextureContainer> SwapTextures(std::unique_ptr<TextureContainer> new_texture);
 
 private:
-  void drawVertices(MTL::RenderCommandEncoder* cmd_encoder,
-                    application::WindowContext* context,
-                    Vec2 parent_offset) override;
+  void _onUpdatedTransform(const math::Transformation2D& transformation) override;
+
+  void drawVertices(MTL::RenderCommandEncoder* cmd_encoder) override;
 
   //! \brief Regenerate the vertex positions. Called when the width or height changes.
   void generateVertices(bool update = true);

@@ -8,9 +8,7 @@ namespace pixelengine::graphics {
 
 Drawable::Drawable(ShaderProgram* shader_program) : shader_program_(shader_program) {}
 
-void Drawable::_draw(MTL::RenderCommandEncoder* cmd_encoder,
-                     application::WindowContext* context,
-                     Vec2 parent_offset) {
+void Drawable::_draw(MTL::RenderCommandEncoder* cmd_encoder) {
   // Set pipeline state - tells the device (GPU) to use the shader program (includes the 
   // vertex and fragment shaders).
   shader_program_->SetPipelineState(cmd_encoder);
@@ -23,7 +21,7 @@ void Drawable::_draw(MTL::RenderCommandEncoder* cmd_encoder,
   // Tell the child drawable to draw its vertices.
   // TODO: Is there a way to do all the translation of vertices generally here (we might have to store vertices here)?
   //       How much commonality is there between drawables? Do they all draw their vertices the same way?
-  drawVertices(cmd_encoder, context, parent_offset);
+  drawVertices(cmd_encoder);
 }
 
 void Drawable::updateTextures() {

@@ -11,8 +11,7 @@
 #include <MetalKit/MetalKit.hpp>
 
 #include "pixelengine/utility/Signal.h"
-#include "pixelengine/utility/Mat2.h"
-#include "pixelengine/utility/WindowContext.h"
+#include "pixelengine/utility/Transformation2D.h"
 
 
 namespace pixelengine {
@@ -81,6 +80,22 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const Node& node) {
     os << "Node(" << node.name_ << ": " << &node << ")";
     return os;
+  }
+
+  void SetPosition(Vec2 position) {
+    transformation_changed_      = true;
+    transformation_.displacement = position;
+  }
+
+  void SetRotation(math::Mat2 rotation) {
+    transformation_changed_        = true;
+    transformation_.transformation = rotation;
+  }
+
+  Vec2 GetPosition() const { return transformation_.displacement; }
+
+  Vec2 GetNetPosition() const {
+    return net_transformation_.displacement;
   }
 
 private:
@@ -173,14 +188,10 @@ private:
     }
   }
 
-  void draw(MTL::RenderCommandEncoder* render_command_encoder,
-            application::WindowContext* context,
-            Vec2 parent_offset) {
-    _draw(render_command_encoder, context, parent_offset);
-    auto context_to_pass   = _chooseWindowContext(context);
-    auto additional_offset = _additionalOffset();
+  void draw(MTL::RenderCommandEncoder* render_command_encoder) {
+    _draw(render_command_encoder);
     for (auto& child : children_) {
-      child->draw(render_command_encoder, context_to_pass, parent_offset + additional_offset);
+      child->draw(render_command_encoder);
     }
   }
 
@@ -222,9 +233,7 @@ protected:
   //! \brief Non physics (internal state) updates.
   virtual void _update([[maybe_unused]] float dt) {}
 
-  virtual void _draw([[maybe_unused]] MTL::RenderCommandEncoder* render_command_encoder,
-                     [[maybe_unused]] application::WindowContext* context,
-                     [[maybe_unused]] Vec2 parent_offset) {}
+  virtual void _draw([[maybe_unused]] MTL::RenderCommandEncoder* render_command_encoder) {}
 
   //! \brief Called right after the node is added to the Tree, and before the parent has _childEntering
   //!        called.
@@ -239,6 +248,9 @@ protected:
   //! \brief Called right before the node is removed from the Tree, and after the parent has _childLeaving
   virtual void _onLeavingFrom([[maybe_unused]] Node* parent) {}
 
+  //! \brief Update any points that depend on the node's transformation.
+  virtual void _onUpdatedTransform([[maybe_unused]] const math::Transformation2D& transformation) {}
+
   // ===========================================================================
   //  Special overrideable functions.
   // ===========================================================================
@@ -246,13 +258,21 @@ protected:
   //! \brief Set the world that should be passed to children of this node.
   [[nodiscard]] virtual world::World* _setWorld(world::World* world) { return world; }
 
-  //! \brief Set the window context that should be passed to children of this node.
-  [[nodiscard]] virtual application::WindowContext* _chooseWindowContext(
-      application::WindowContext* context) {
-    return context;
-  }
+  // Transformation
 
-  [[nodiscard]] virtual Vec2 _additionalOffset() const { return {}; }
+  void updateTransformation(bool upstream_updated, const math::Transformation2D& parent_transformation) {
+    const bool needs_update = transformation_changed_ || upstream_updated;
+    transformation_changed_ = false;
+
+    if (needs_update) {
+      net_transformation_ = parent_transformation * transformation_;
+      _onUpdatedTransform(net_transformation_);
+      LOG_SEV(Info) << GetName() << ": Updated transformation: " << transformation_ << " (parent = " << parent_transformation << ") (net = " << net_transformation_ << ")";
+    }
+    for (auto& child : children_) {
+      child->updateTransformation(needs_update, net_transformation_);
+    }
+  }
 
   // ===========================================================================
   //  Protected member variables.
@@ -274,8 +294,15 @@ private:
 
   std::list<SignalEmitter> signals_;
 
-  Vec2 position_;
-  [[maybe_unused]]math::Mat2 transformation_;
+  //! \brief Transformation (displacement and transformation matrix), relative to parent.
+  math::Transformation2D transformation_ = math::Transformation2D::Identity();
+
+  //! \brief Net transformation relative to root node.
+  math::Transformation2D net_transformation_ = math::Transformation2D::Identity();
+
+  //! \brief Whether `transformation_` has changed since the last updateTransformation.
+  //!        Initialized to true to propagate transformation changes.
+  bool transformation_changed_ = true;
 };
 
 }  // namespace pixelengine

@@ -29,6 +29,12 @@ public:
     return data_[y * 2 + x];
   }
 
+  float operator()(std::size_t x, std::size_t y) const {
+    // PIXEL_ASSERT(x < 2, "x must be < 2, was " << x);
+    // PIXEL_ASSERT(y < 2, "y must be < 2, was " << y);
+    return data_[y * 2 + x];
+  }
+
   friend Mat2 operator*(const Mat2& a, const Mat2& b);
   friend Mat2 operator*(float x, const Mat2& m);
   

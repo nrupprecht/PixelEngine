@@ -28,13 +28,7 @@ private:
 
   void _updatePhysics(float dt, const World* world) override;
 
-  void _draw(MTL::RenderCommandEncoder* render_command_encoder,
-             WindowContext* context,
-             pixelengine::Vec2 parent_offset) override;
-
-  WindowContext* _chooseWindowContext([[maybe_unused]] WindowContext* context) override {
-    return &world_context_; // What if the incoming context is not null?
-  }
+  void _draw(MTL::RenderCommandEncoder* render_command_encoder) override;
 
   void setSquare(long long x, long long y, const Square& square) override {
     active_region_.Update(x, y);
@@ -47,8 +41,6 @@ private:
 
   std::size_t chunk_width_;
   std::size_t chunk_height_;
-
-  WindowContext world_context_;
 
   BoundingBox active_region_;
 

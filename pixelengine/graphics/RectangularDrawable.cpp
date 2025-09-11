@@ -46,28 +46,6 @@ TextureContainer& RectangularDrawable::GetTextureBitmap() const {
   return *textures_.at(0);
 }
 
-void RectangularDrawable::SetPosition(Vec2 position) {
-  SetPosition(position.x, position.y);
-}
-
-void RectangularDrawable::SetPosition(float x, float y) {
-  auto [ave_x, ave_y] = GetPosition();
-
-  auto dx = x - ave_x, dy = y - ave_y;
-  for (auto& vert : verts_) {
-    vert.position.x += dx;
-    vert.position.y += dy;
-  }
-  // Update the position buffer.
-  buffers_.at(0).CopyInto<shadertypes::VertexData>(verts_.data());
-}
-
-std::array<float, 2> RectangularDrawable::GetPosition() const {
-  auto ave_x = 0.5f * (verts_[0].position.x + verts_[2].position.x);
-  auto ave_y = 0.5f * (verts_[0].position.y + verts_[2].position.y);
-  return {ave_x, ave_y};
-}
-
 void RectangularDrawable::SetWidth(float width) {
   width_ = width;
   generateVertices();
@@ -87,20 +65,20 @@ std::unique_ptr<TextureContainer> RectangularDrawable::SwapTextures(
   return old_texture;
 }
 
-void RectangularDrawable::drawVertices(MTL::RenderCommandEncoder* cmd_encoder,
-                                       application::WindowContext* context,
-                                       Vec2 parent_offset) {
-  auto displaced_verts_ = verts_;
-  // Displace vertices.
-  for (auto& vert : displaced_verts_) {
-    Vec2 pos        = Vec2 {vert.position.x, vert.position.y} + parent_offset;
-    pos             = context ? context->TranslatePoint(pos) : pos;
-    vert.position.x = pos.x;
-    vert.position.y = pos.y;
-  }
-  // TODO: Only update when necessary.
-  buffers_.at(0).CopyInto<shadertypes::VertexData>(displaced_verts_.data());
+void RectangularDrawable::_onUpdatedTransform(const math::Transformation2D& transformation) {
+  LOG_SEV(Major) << "Transformation: " << transformation;
+  // Update the vertex positions based on the current transformation.
+  for (auto& vert : verts_) {
+    LOG_SEV(Major) << "Position was: " << float(vert.position.x) << ", " << float(vert.position.y);
+    vert.position = transformation.TransformPoint(vert.position);
 
+    LOG_SEV(Major) << "Updated vertex position: " << float(vert.position.x) << ", " << float(vert.position.y);
+  }
+  // Update the position buffer.
+  buffers_.at(0).CopyInto<shadertypes::VertexData>(verts_.data());
+}
+
+void RectangularDrawable::drawVertices(MTL::RenderCommandEncoder* cmd_encoder) {
   cmd_encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle,
                                      index_buffer_.Size(),
                                      MTL::IndexTypeUInt16,

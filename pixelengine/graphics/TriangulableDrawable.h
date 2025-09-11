@@ -15,13 +15,14 @@ namespace pixelengine::graphics {
 //! \brief A rectangular drawable object.
 class TriangulableDrawable : public Drawable {
 public:
-//! \brief TODO: more general shader program support?
+  //! \brief TODO: more general shader program support?
   TriangulableDrawable(std::vector<Vec2> vertices, std::vector<uint16_t> indices, Color color);
 
 private:
-  void drawVertices(MTL::RenderCommandEncoder* cmd_encoder,
-                    application::WindowContext* context,
-                    Vec2 parent_offset) override;
+  void _onUpdatedTransform(const math::Transformation2D& transformation) override;
+
+  void drawVertices(MTL::RenderCommandEncoder* cmd_encoder) override;
+
 
   utility::AutoBuffer index_buffer_;
   std::vector<Vec2> vertices_;

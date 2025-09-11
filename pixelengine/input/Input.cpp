@@ -32,6 +32,10 @@ std::optional<Vec2> getApplicationCursorPosition(CGRect frame) {
     auto x = static_cast<float>((cursor.x - origin.x) / size.width);
     auto y = static_cast<float>((cursor.y - origin.y) / size.height);
 
+    // Translate into [-1, 1] coordinates.
+    x = 2 * (x - 0.5);
+    y = 2 * (y - 0.5);
+
     return Vec2 {x, y};
   }
   return {};

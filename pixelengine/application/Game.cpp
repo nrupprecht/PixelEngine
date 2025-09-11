@@ -79,6 +79,9 @@ void Game::update(float delta) {
   scene_->removeQueuedChildren();
   scene_->addQueuedChildren();
 
+  auto id = math::Transformation2D::Identity();
+  scene_->updateTransformation(false, id);
+
   // Check all input signals.
   input::Input::GetSignals().beginCheckSignals();
   input::Input::GetSignals().checkSignals();
@@ -105,10 +108,7 @@ void Game::setDelegates() {
   }
 
   application_->GetViewDelegate().SetRenderCallback(
-      [this](MTL::RenderCommandEncoder* render_command_encoder) {
-        scene_->draw(render_command_encoder, {}, {});
-        //                 no window context ^^  ^^ no parent offset.
-      });
+      [this](MTL::RenderCommandEncoder* render_command_encoder) { scene_->draw(render_command_encoder); });
 
   graphics::ShaderStore::makeGlobalInstance(application_->GetDevice());
 }

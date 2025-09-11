@@ -77,8 +77,6 @@ private:
   void _interactWithWorld(world::World* world) override;
   void _updatePhysics(float dt, const world::World* world) override;
 
-  [[nodiscard]] Vec2 _additionalOffset() const override { return position_.To<float>(); }
-
   void updateBodyPhysics(float dt, const world::World* world);
   void moveBody(world::World& world);
 

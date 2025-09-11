@@ -16,8 +16,6 @@ namespace minesandmagic {
 SingleChunkWorld::SingleChunkWorld(std::size_t chunk_width, std::size_t chunk_height)
     : chunk_width_(chunk_width)
     , chunk_height_(chunk_height)
-    // TODO: Get the actual window width and height? Do we really need these in this struct?
-    , world_context_ {0.f, static_cast<float>(chunk_width), 0.f, static_cast<float>(chunk_height)}
     , active_region_(0, static_cast<long long>(chunk_width), 0, static_cast<long long>(chunk_height))
     , squares_(chunk_width_ * chunk_height_) {
   auto shader_program = graphics::ShaderStore::GetInstance()->GetShaderProgram("TextureShader");
@@ -40,9 +38,7 @@ SingleChunkWorld::SingleChunkWorld(std::size_t chunk_width, std::size_t chunk_he
 }
 
 
-void SingleChunkWorld::_draw(MTL::RenderCommandEncoder* render_command_encoder,
-                             [[maybe_unused]] WindowContext* context,
-                             pixelengine::Vec2 parent_offset) {
+void SingleChunkWorld::_draw([[maybe_unused]] MTL::RenderCommandEncoder* render_command_encoder) {
   // Update pixels to render the world.
   for (auto j = 0ull; j < world_texture_.GetHeight(); ++j) {
     for (auto i = 0ull; i < world_texture_.GetWidth(); ++i) {
@@ -57,7 +53,7 @@ void SingleChunkWorld::_draw(MTL::RenderCommandEncoder* render_command_encoder,
   world_texture_.Update();
 }
 
-void SingleChunkWorld::_updatePhysics(float raw_dt, const world::World* world) {
+void SingleChunkWorld::_updatePhysics(float raw_dt, [[maybe_unused]] const world::World* world) {
   auto dt = std::min(1.f / 30.f, raw_dt);
 
   // Reset was-moved flags.
@@ -108,7 +104,7 @@ void SingleChunkWorld::_updatePhysics(float raw_dt, const world::World* world) {
   // TODO: Other updates, e.g. temperature, objects catching fire, reacting, etc.?
 }
 
-void SingleChunkWorld::_update(float dt) {
+void SingleChunkWorld::_update([[maybe_unused]] float dt) {
   static unsigned brush_type = 0;
   // TODO: Use input callbacks instead?
   if (input::Input::IsJustPressed('B')) {
